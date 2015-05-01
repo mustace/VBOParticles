@@ -4,6 +4,20 @@
 
 GLuint vbo;
 GLfloat interleavedData[] = { 0, 2, -4, 1, 0, 0, -2, -2, -4, 0, 1, 0, 2, -2, -4, 0, 0, 1 };
+GLuint vertexShader, fragmentShader, shaderProgram;
+
+void makeShaders(){
+	const char *vsText, *fsText;
+
+	vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	//fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(vertexShader, 1, &vsText, NULL);
+	glCompileShader(vertexShader);
+	shaderProgram = glCreateProgram();
+	glAttachShader(shaderProgram, vertexShader);
+	glLinkProgram(shaderProgram);
+	glUseProgram(shaderProgram);
+}
 
 void init(){
 
