@@ -67,9 +67,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="particles.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="fragment.glsl" />
     <None Include="packages.config" />
+    <None Include="vertex.glsl" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="particles.h" />
+    <ClInclude Include="pool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
