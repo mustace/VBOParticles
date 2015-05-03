@@ -6,8 +6,14 @@
 #include <fstream>
 #include <algorithm>
 
-GLuint vbo;
+GLuint vertexBufferObject, normalBufferObject, colorBufferObject;
+
 GLfloat interleavedData[] = { 0, 2, -4, 1, 0, 0, -2, -2, -4, 0, 1, 0, 2, -2, -4, 0, 0, 1 };
+
+GLfloat vertexPositions[] = { 0, 2, -4, -2, -2, -4, 2, -2, -4 }; // XYZ format
+GLfloat vertexNormals[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // not used atm
+GLfloat vertexColors[] = { 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1 }; // RGBA format
+
 GLuint vertexShader, fragmentShader, shaderProgram;
 
 
@@ -68,12 +74,18 @@ void init(){
 	GLuint shaderProgram = LoadShader("vertex.glsl", "fragment.glsl");
 	glUseProgram(shaderProgram);
 
-	//create identifiers
-	glGenBuffers(1, &vbo);
-	// Bind identifier
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(interleavedData), interleavedData, GL_STATIC_DRAW); // GL_DYNAMIC for changing data.
-
+	// generate "pointers" (names) for each buffer
+	glGenBuffers(1, &vertexBufferObject);
+	glGenBuffers(1, &normalBufferObject);
+	glGenBuffers(1, &colorBufferObject);
+	// put data in buffers - glBindBuffer sets the active buffer, glBufferData pours data in the active buffer
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions, GL_DYNAMIC_DRAW); // GL_DYNAMIC for changing data.
+	glBindBuffer(GL_ARRAY_BUFFER, normalBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexNormals), vertexNormals, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_DYNAMIC_DRAW); 
+	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 }
 
 // Draw callback 
@@ -81,10 +93,11 @@ void display(){
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	//Have to bind buffer in display
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
 	/*
+	//Have to bind buffer in display
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
 	//GlVertexPointer code (outdated)
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
@@ -98,14 +111,42 @@ void display(){
 	glBindBuffer(GL_ARRAY_BUFFER, 0); //bind nothing
 	*/
 
-	//With VertexAttribPointer instead of vertex-/color pointer
+	/*
+	// Enable two parameters for the shader
 	glEnableVertexAttribArray(0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat),NULL);
+
+	// Specifies how to find the parameters in the VertexArrayObject
+	
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), NULL);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (void*)(3*sizeof(GLfloat)));
-	glBindVertexArray(vbo);
+	*/
+
+	//With VertexAttribPointer instead of vertex-/color pointer
+
+	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	glBindBuffer(GL_ARRAY_BUFFER, normalBufferObject);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	// Draw from the specified part of the array
+	//glBindVertexArray(vbo);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glBindVertexArray(0);
+	//glBindVertexArray(0);
+
+	// Reset the holy global state machine that is openGL
+	glDisableVertexAttribArray(0);
+	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(2);
+	
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glutSwapBuffers();
 }
@@ -117,7 +158,9 @@ int main(int argc, char **argv){
 	glutInitWindowSize(800, 600); //optional
 	glutCreateWindow("Particle Window!");
 	glewInit();
+
 	init();
+
 	// register callbacks
 	glutDisplayFunc(display);
 	glutIdleFunc(display);
