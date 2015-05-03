@@ -122,6 +122,8 @@ int main(int argc, char **argv){
 	glutDisplayFunc(display);
 	glutIdleFunc(display);
 
+	printf("OpenGL version supported by this platform (%s): \n", glGetString(GL_VERSION));
+
 	glutMainLoop();
 
 	return 0;
