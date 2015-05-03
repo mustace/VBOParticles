@@ -6,15 +6,34 @@
 #include <fstream>
 #include <algorithm>
 
+#define MAX_PARTICLES (10000)
+
+
 GLuint vertexBufferObject, normalBufferObject, colorBufferObject;
 
 GLfloat interleavedData[] = { 0, 2, -4, 1, 0, 0, -2, -2, -4, 0, 1, 0, 2, -2, -4, 0, 0, 1 };
 
+/*
 GLfloat vertexPositions[] = { 0, 2, -4, -2, -2, -4, 2, -2, -4 }; // XYZ format
 GLfloat vertexNormals[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // not used atm
 GLfloat vertexColors[] = { 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1 }; // RGBA format
+*/
+
+
+GLfloat vertexPositions[MAX_PARTICLES * 3]; // XYZ format
+GLfloat vertexNormals[MAX_PARTICLES* 3]; // not used atm
+GLfloat vertexColors[MAX_PARTICLES * 4]; // RGBA format
+
 
 GLuint vertexShader, fragmentShader, shaderProgram;
+
+
+/*void initArrays(int maxParticles) {
+	vertexPositions = new GLfloat[maxParticles * 3];
+	vertexNormals= new GLfloat[maxParticles * 3];
+	vertexColors= new GLfloat[maxParticles * 4];
+}*/
+
 
 
 //  http://www.nexcius.net/2012/11/20/how-to-load-a-glsl-shader-in-opengl-using-c/ readfile method
@@ -67,17 +86,37 @@ void init(){
 	glClearColor(0, 0, 0, 1);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(50, 640.0 / 480.0, 1, 1000);
+	gluPerspective(40.0, 1.0, 1.0, 10.0);
 	glMatrixMode(GL_MODELVIEW);
+	gluLookAt(0.0, 0.0, 5.0,  // Set eye position, target position, and up direction.
+		0.0, 0.0, 0.0,
+		0.0, 1.0, 0.);
 	glEnable(GL_DEPTH_TEST);
 
+
+	// Specif what shader programs to use
 	GLuint shaderProgram = LoadShader("vertex.glsl", "fragment.glsl");
 	glUseProgram(shaderProgram);
+
+	// initArrays(MAX_PARTICLES);
+
+	vertexPositions[0] = 0;
+	vertexPositions[1] = 2;
+	vertexPositions[2] = -4;
+	vertexPositions[3] = -2;
+	vertexPositions[4] = -2;
+	vertexPositions[5] = -4;
+	vertexPositions[6] = 2;
+	vertexPositions[7] = -2;
+	vertexPositions[8] = -4;
+
 
 	// generate "pointers" (names) for each buffer
 	glGenBuffers(1, &vertexBufferObject);
 	glGenBuffers(1, &normalBufferObject);
 	glGenBuffers(1, &colorBufferObject);
+
+
 	// put data in buffers - glBindBuffer sets the active buffer, glBufferData pours data in the active buffer
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions, GL_DYNAMIC_DRAW); // GL_DYNAMIC for changing data.
