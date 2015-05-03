@@ -13,6 +13,13 @@ struct vertex {
 	double z;
 };
 
+struct color {
+	double r;
+	double g;
+	double b;
+	double a;
+};
+
 // Performance posibility: Have vertices in world space instead of local,
 // and disregard position entirely when drawing, saving calculations.
 struct Triparticle {
@@ -20,6 +27,7 @@ struct Triparticle {
 	vertex v1, v2, v3;
 	// Maybe have rotation and angular velocity?  
 	vertex velocity;
+	color color; 
 	int lifetime;
 };
 

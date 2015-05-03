@@ -41,6 +41,8 @@ GLfloat vertexColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
 
 GLuint vertexShader, fragmentShader, shaderProgram;
 
+char* attribute_color_name = "inColor";
+GLint attribute_color;
 
 Pool<Triparticle> pool;
 
@@ -91,7 +93,7 @@ std::string readFile(const char *filePath) {
 }
 
 // Loads a shader from files.
-GLuint LoadShader(const char *vertex_path, const char *fragment_path) {
+GLuint LoadShader(GLuint program, const char *vertex_path, const char *fragment_path) {
 	GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
 	GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
 
@@ -106,7 +108,6 @@ GLuint LoadShader(const char *vertex_path, const char *fragment_path) {
 	glCompileShader(vertShader);
 	glCompileShader(fragShader);
 
-	GLuint program = glCreateProgram();
 	glAttachShader(program, vertShader);
 	glAttachShader(program, fragShader);
 	glLinkProgram(program);
@@ -134,6 +135,14 @@ vertex make_random_vertex(double xMin, double xMax,
 	};
 }
 
+color make_random_color() {
+	return{
+		randFloatRange(0.0, 1.0),
+		randFloatRange(0.0, 1.0),
+		randFloatRange(0.0, 1.0),
+		randFloatRange(0.0, 1.0)
+	};
+}
 
 void init_random_triparticle(Triparticle *t,
 	double minSize,
@@ -160,6 +169,8 @@ void init_random_triparticle(Triparticle *t,
 	};
 
 	t->lifetime = LIFE_TIME;
+
+	t->color = make_random_color();
 
 }
 
@@ -239,6 +250,20 @@ void drawInBuffer(Triparticle* t, int index) {
 	normalBuffer[8] = n.z;
 
 	//TODO Do colors as well later!
+	GLfloat* colorBuffer = vertexColors + index *COLOR_COORDINATES * 3;
+
+	colorBuffer[0] = t->color.r;
+	colorBuffer[1] = t->color.g;
+	colorBuffer[2] = t->color.b;
+	colorBuffer[3] = t->color.a;
+	colorBuffer[4] = t->color.r;
+	colorBuffer[5] = t->color.g;
+	colorBuffer[6] = t->color.b;
+	colorBuffer[7] = t->color.a;
+	colorBuffer[8] = t->color.r;
+	colorBuffer[9] = t->color.g;
+	colorBuffer[10] = t->color.b;
+	colorBuffer[11] = t->color.a;
 }
 
 
@@ -298,10 +323,8 @@ void display(){
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	printf("%i\n", pool.count());
+	glEnableVertexAttribArray(attribute_color);
+	glVertexAttribPointer(attribute_color, 4, GL_FLOAT, GL_FALSE, 0, NULL);
 
 	// Draw from the specified part of the array
 	//glBindVertexArray(vbo);
@@ -311,7 +334,7 @@ void display(){
 	// Reset the holy global state machine that is openGL
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
-	glDisableVertexAttribArray(2);
+	glDisableVertexAttribArray(attribute_color);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -347,6 +370,8 @@ void onFrame(int value) {
 
 
 		// draw_triparticle(t);
+
+		// Draw the triparticle to the buffer arrays
 		drawInBuffer(t, i);
 	}
 
@@ -373,23 +398,15 @@ void init(){
 		0.0, 1.0, 0.);
 	glEnable(GL_DEPTH_TEST);
 
-
 	// Specif what shader programs to use
-	GLuint shaderProgram = LoadShader("vertex.glsl", "fragment.glsl");
+	GLuint program = glCreateProgram();
+
+	// glBindAttribLocation(program, 2, attribute_color_name);
+
+	GLuint shaderProgram = LoadShader(program, "vertex.glsl", "fragment.glsl");
 	glUseProgram(shaderProgram);
 
 	// initArrays(MAX_PARTICLES);
-
-	vertexPositions[0] = 0;
-	vertexPositions[1] = 2;
-	vertexPositions[2] = -4;
-	vertexPositions[3] = -2;
-	vertexPositions[4] = -2;
-	vertexPositions[5] = -4;
-	vertexPositions[6] = 2;
-	vertexPositions[7] = -2;
-	vertexPositions[8] = -4;
-
 
 	// generate "pointers" (names) for each buffer
 	glGenBuffers(1, &vertexBufferObject);
@@ -405,6 +422,11 @@ void init(){
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_DYNAMIC_DRAW); 
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
+
+	attribute_color = glGetAttribLocation(shaderProgram, attribute_color_name);
+	if (attribute_color == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", attribute_color_name);
+	}
 }
 
 int main(int argc, char **argv){
