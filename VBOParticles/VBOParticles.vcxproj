@@ -68,6 +68,7 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="particles.cpp" />
+    <ClCompile Include="shaders.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl" />
@@ -77,6 +78,7 @@
   <ItemGroup>
     <ClInclude Include="particles.h" />
     <ClInclude Include="pool.h" />
+    <ClInclude Include="shaders.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

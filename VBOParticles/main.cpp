@@ -1,14 +1,9 @@
 #include "GL\glew.h"
 #include "GL\freeglut.h"
 #include <iostream>
-#include <vector>
-#include <string>
-#include <fstream>
-#include <algorithm>
-#include <vector>
-#include <cstdlib>
 #include "particles.h"
 #include "pool.h"
+#include "shaders.h"
 
 #define MAX_PARTICLES (10000)
 #define LINE_SIZE (256)
@@ -27,19 +22,11 @@ GLuint vertexBufferObject, normalBufferObject, colorBufferObject;
 
 GLfloat interleavedData[] = { 0, 2, -4, 1, 0, 0, -2, -2, -4, 0, 1, 0, 2, -2, -4, 0, 0, 1 };
 
-/*
-GLfloat vertexPositions[] = { 0, 2, -4, -2, -2, -4, 2, -2, -4 }; // XYZ format
-GLfloat vertexNormals[] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }; // not used atm
-GLfloat vertexColors[] = { 1, 0, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1 }; // RGBA format
-*/
-
-
 GLfloat vertexPositions[MAX_PARTICLES * POSITION_COORDINATES]; // XYZ format
 GLfloat vertexNormals[MAX_PARTICLES* NORMAL_COORDINATES]; // not used atm
 GLfloat vertexColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
 
-
-GLuint vertexShader, fragmentShader, shaderProgram;
+GLuint shaderProgram;
 
 char* attribute_color_name = "inColor";
 GLint attribute_color;
@@ -62,58 +49,6 @@ double randFloatRange(double M, double N)
 {
 	return M + (rand() / (RAND_MAX / (N - M)));
 }
-
-
-/*void initArrays(int maxParticles) {
-	vertexPositions = new GLfloat[maxParticles * 3];
-	vertexNormals= new GLfloat[maxParticles * 3];
-	vertexColors= new GLfloat[maxParticles * 4];
-}*/
-
-
-
-//  http://www.nexcius.net/2012/11/20/how-to-load-a-glsl-shader-in-opengl-using-c/ readfile method
-std::string readFile(const char *filePath) {
-	std::string content;
-	std::ifstream fileStream(filePath, std::ios::in);
-
-	if (!fileStream.is_open()) {
-		std::cerr << "Could not read file " << filePath << ". File does not exist." << std::endl;
-		return "";
-	}
-
-	std::string line = "";
-	while (!fileStream.eof()) {
-		std::getline(fileStream, line);
-		content.append(line + "\n");
-	}
-
-	fileStream.close();
-	return content;
-}
-
-// Loads a shader from files.
-GLuint LoadShader(GLuint program, const char *vertex_path, const char *fragment_path) {
-	GLuint vertShader = glCreateShader(GL_VERTEX_SHADER);
-	GLuint fragShader = glCreateShader(GL_FRAGMENT_SHADER);
-
-	// Read shaders
-	std::string vertShaderStr = readFile(vertex_path);
-	std::string fragShaderStr = readFile(fragment_path);
-	const char *vertShaderSrc = vertShaderStr.c_str();
-	const char *fragShaderSrc = fragShaderStr.c_str();
-
-	glShaderSource(vertShader, 1, &vertShaderSrc, NULL);
-	glShaderSource(fragShader, 1, &fragShaderSrc, NULL);
-	glCompileShader(vertShader);
-	glCompileShader(fragShader);
-
-	glAttachShader(program, vertShader);
-	glAttachShader(program, fragShader);
-	glLinkProgram(program);
-	return program;
-}
-
 
 // Returns random particle, xyz within same range
 vertex make_random_vertex(double min, double max) {
@@ -399,11 +334,10 @@ void init(){
 	glEnable(GL_DEPTH_TEST);
 
 	// Specif what shader programs to use
-	GLuint program = glCreateProgram();
 
 	// glBindAttribLocation(program, 2, attribute_color_name);
 
-	GLuint shaderProgram = LoadShader(program, "vertex.glsl", "fragment.glsl");
+	GLuint shaderProgram = LoadProgram("vertex.glsl", "fragment.glsl");
 	glUseProgram(shaderProgram);
 
 	// initArrays(MAX_PARTICLES);
@@ -429,7 +363,7 @@ void init(){
 	}
 }
 
-int main(int argc, char **argv){
+int main(int argc, char **argv) {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(500, 500);//optional
@@ -443,7 +377,7 @@ int main(int argc, char **argv){
 	glutDisplayFunc(display);
 	glutTimerFunc(FRAME_MSEC, onFrame, 0);
 
-	printf("OpenGL version supported by this platform (%s): \n", glGetString(GL_VERSION));
+	printf("OpenGL version supported by this platform (%s): \n", (char const*) glGetString(GL_VERSION));
 
 	glutMainLoop();
 
