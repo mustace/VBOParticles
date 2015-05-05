@@ -1,5 +1,6 @@
 attribute vec4 inColor;
 attribute vec3 inTranslation;
+attribute float inRotZ;
 
 varying vec4 vColor;
 
@@ -16,7 +17,7 @@ void main()
 	float z = inTranslation.z;
 
 	mat4 t = mat4(
-		1.0, 0.0, 0.0, 0.0,
+		inRotZ, 0.0, 0.0, 0.0,
 		0.0, 1.0, 0.0, 0.0,
 		0.0, 0.0, 1.0, 0.0,
 		  x,   y,   z, 1.0

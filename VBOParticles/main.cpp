@@ -19,9 +19,10 @@
 #define NORMAL_COORDINATES (3)
 #define COLOR_COORDINATES (4)
 #define TRANSLATION_COORDINATES (3)
+#define ROTZ_COORDINATES (1)
 #include "utils.h"
 
-GLuint vertexBufferObject, normalBufferObject, colorBufferObject, translationBufferObject;
+GLuint vertexBufferObject, normalBufferObject, colorBufferObject, translationBufferObject, rotZBufferObject;
 
 GLfloat interleavedData[] = { 0, 2, -4, 1, 0, 0, -2, -2, -4, 0, 1, 0, 2, -2, -4, 0, 0, 1 };
 
@@ -29,10 +30,12 @@ GLfloat vertexPositions[MAX_PARTICLES * POSITION_COORDINATES]; // XYZ format
 GLfloat vertexNormals[MAX_PARTICLES* NORMAL_COORDINATES]; // not used atm
 GLfloat vertexColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
 GLfloat vertexTranslations[MAX_PARTICLES * TRANSLATION_COORDINATES]; // XYZ format
+GLfloat vertexRotZs[MAX_PARTICLES * ROTZ_COORDINATES]; // float format
 
 GLuint shaderProgram;
 GLint attribute_color;
 GLint attribute_translation;
+GLint attribute_rotz;
 
 Pool<Triparticle> pool;
 
@@ -106,6 +109,9 @@ void init_random_triparticle(Triparticle *t,
 		0.0
 	};
 
+	t->rotZ = 0.0f;
+	t->velZ = 0.01f;
+
 	t->lifetime = LIFE_TIME;
 
 	t->color = make_random_color();
@@ -122,6 +128,8 @@ void update_triparticle(Triparticle* t) {
 	t->lifetime--;
 
 	t->pos = newPos;
+
+	t->rotZ += t->velZ;
 }
 
 
@@ -140,6 +148,7 @@ void drawInBuffer(Triparticle* t, int index) {
 	vertex* normalBuffer = (vertex*) (vertexNormals + index * NORMAL_COORDINATES * 3);
 	color* colorBuffer = (color*)(vertexColors + index *COLOR_COORDINATES * 3);
 	vertex* translationBuffer = (vertex*)(vertexTranslations + index * TRANSLATION_COORDINATES * 3);
+	GLfloat* rotzBuffer = vertexRotZs + index * ROTZ_COORDINATES * 3;
 
 	for (int i = 0; i < 3; ++i) { 
 
@@ -147,6 +156,7 @@ void drawInBuffer(Triparticle* t, int index) {
 		normalBuffer[i] = n;
 		colorBuffer[i] = t->color;
 		translationBuffer[i] = t->pos;
+		rotzBuffer[i] = t->rotZ;
 		
 	}
 
@@ -166,6 +176,9 @@ void display(){
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexTranslations), vertexTranslations, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, rotZBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexRotZs), vertexRotZs, GL_DYNAMIC_DRAW);
+	
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
 	// Specify how the shader finds data in the buffers
@@ -184,6 +197,10 @@ void display(){
 	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
 	glEnableVertexAttribArray(attribute_translation);
 	glVertexAttribPointer(attribute_translation, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	glBindBuffer(GL_ARRAY_BUFFER, rotZBufferObject);
+	glEnableVertexAttribArray(attribute_rotz);
+	glVertexAttribPointer(attribute_rotz, 1, GL_FLOAT, GL_FALSE, 0, NULL);
 	
 	// Draw from the specified part of the array
 	glDrawArrays(GL_TRIANGLES, 0, pool.count() * 3); // 3 vertices for each tri
@@ -193,6 +210,7 @@ void display(){
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(attribute_color);
 	glDisableVertexAttribArray(attribute_translation);
+	glDisableVertexAttribArray(attribute_rotz);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -258,6 +276,7 @@ void init(){
 	glGenBuffers(1, &normalBufferObject);
 	glGenBuffers(1, &colorBufferObject);
 	glGenBuffers(1, &translationBufferObject);
+	glGenBuffers(1, &rotZBufferObject);
 	
 	// put data in buffers - glBindBuffer sets the active buffer, glBufferData pours data in the active buffer
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
@@ -268,7 +287,9 @@ void init(){
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_DYNAMIC_DRAW); 
 	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexTranslations), vertexTranslations, GL_DYNAMIC_DRAW);
-	
+	glBindBuffer(GL_ARRAY_BUFFER, rotZBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexRotZs), vertexRotZs, GL_DYNAMIC_DRAW);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
 	attribute_color = glGetAttribLocation(shaderProgram, attribute_color_name);
@@ -280,6 +301,12 @@ void init(){
 	if (attribute_translation == -1) {
 		fprintf(stderr, "Could not bind attribute %s\n", attribute_translation_name);
 	}
+
+	attribute_rotz = glGetAttribLocation(shaderProgram, attribut_rotz_name);
+	if (attribute_rotz == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", attribut_rotz_name);
+	}
+
 }
 
 int main(int argc, char **argv) {
