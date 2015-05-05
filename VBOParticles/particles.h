@@ -8,16 +8,16 @@ struct triangle {
 };
 
 struct vertex {
-	double x;
-	double y;
-	double z;
+	GLfloat x;
+	GLfloat y;
+	GLfloat z;
 };
 
 struct color {
-	double r;
-	double g;
-	double b;
-	double a;
+	GLfloat r;
+	GLfloat g;
+	GLfloat b;
+	GLfloat a;
 };
 
 // Performance posibility: Have vertices in world space instead of local,

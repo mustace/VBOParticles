@@ -34,7 +34,7 @@ GLuint LoadShader(const char* file_path, GLenum type)
 	return shader;
 }
 
-GLuint LoadProgram(const char *vert_path, const char *frag_path) {
+GLuint LoadShaderProgram(const char *vert_path = "vertex.glsl", const char *frag_path = "fragment.glsl") {
 
 	GLuint program = glCreateProgram();
 
