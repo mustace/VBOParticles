@@ -18,18 +18,21 @@
 #define POSITION_COORDINATES (3)
 #define NORMAL_COORDINATES (3)
 #define COLOR_COORDINATES (4)
+#define TRANSLATION_COORDINATES (3)
 #include "utils.h"
 
-GLuint vertexBufferObject, normalBufferObject, colorBufferObject;
+GLuint vertexBufferObject, normalBufferObject, colorBufferObject, translationBufferObject;
 
 GLfloat interleavedData[] = { 0, 2, -4, 1, 0, 0, -2, -2, -4, 0, 1, 0, 2, -2, -4, 0, 0, 1 };
 
 GLfloat vertexPositions[MAX_PARTICLES * POSITION_COORDINATES]; // XYZ format
 GLfloat vertexNormals[MAX_PARTICLES* NORMAL_COORDINATES]; // not used atm
 GLfloat vertexColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
+GLfloat vertexTranslations[MAX_PARTICLES * TRANSLATION_COORDINATES]; // XYZ format
 
 GLuint shaderProgram;
 GLint attribute_color;
+GLint attribute_translation;
 
 Pool<Triparticle> pool;
 
@@ -124,24 +127,26 @@ void update_triparticle(Triparticle* t) {
 
 void drawInBuffer(Triparticle* t, int index) {
 	// tri verts in world space
-	vertex vs[3];
-
+	vertex ps[3];
 	// find world coords for verts
-	vs[0] = vertex_add(t->pos, t->v1);
-	vs[1] = vertex_add(t->pos, t->v2);
-	vs[2] = vertex_add(t->pos, t->v3);
+
+	ps[0] = t->v1;
+	ps[1] = t->v2;
+	ps[2] = t->v3;
 	
-	vertex n = vertex_normal(vs);
+	vertex n = vertex_normal(ps);
 
 	vertex* posBuffer = (vertex*) (vertexPositions + index * POSITION_COORDINATES * 3); // 3 verts to a particle
 	vertex* normalBuffer = (vertex*) (vertexNormals + index * NORMAL_COORDINATES * 3);
 	color* colorBuffer = (color*)(vertexColors + index *COLOR_COORDINATES * 3);
+	vertex* translationBuffer = (vertex*)(vertexTranslations + index * TRANSLATION_COORDINATES * 3);
 
 	for (int i = 0; i < 3; ++i) { 
 
-		posBuffer[i] = vs[i];
+		posBuffer[i] = ps[i];
 		normalBuffer[i] = n;
 		colorBuffer[i] = t->color;
+		translationBuffer[i] = t->pos;
 		
 	}
 
@@ -159,8 +164,9 @@ void display(){
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexNormals), vertexNormals, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexTranslations), vertexTranslations, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
-
 
 	// Specify how the shader finds data in the buffers
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject); // Sets active buffer
@@ -175,6 +181,10 @@ void display(){
 	glEnableVertexAttribArray(attribute_color);
 	glVertexAttribPointer(attribute_color, 4, GL_FLOAT, GL_FALSE, 0, NULL);
 
+	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
+	glEnableVertexAttribArray(attribute_translation);
+	glVertexAttribPointer(attribute_translation, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	
 	// Draw from the specified part of the array
 	glDrawArrays(GL_TRIANGLES, 0, pool.count() * 3); // 3 vertices for each tri
 
@@ -182,6 +192,7 @@ void display(){
 	glDisableVertexAttribArray(0);
 	glDisableVertexAttribArray(1);
 	glDisableVertexAttribArray(attribute_color);
+	glDisableVertexAttribArray(attribute_translation);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -246,6 +257,7 @@ void init(){
 	glGenBuffers(1, &vertexBufferObject);
 	glGenBuffers(1, &normalBufferObject);
 	glGenBuffers(1, &colorBufferObject);
+	glGenBuffers(1, &translationBufferObject);
 	
 	// put data in buffers - glBindBuffer sets the active buffer, glBufferData pours data in the active buffer
 	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
@@ -254,11 +266,19 @@ void init(){
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexNormals), vertexNormals, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_DYNAMIC_DRAW); 
+	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexTranslations), vertexTranslations, GL_DYNAMIC_DRAW);
+	
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
 	attribute_color = glGetAttribLocation(shaderProgram, attribute_color_name);
 	if (attribute_color == -1) {
 		fprintf(stderr, "Could not bind attribute %s\n", attribute_color_name);
+	}
+
+	attribute_translation = glGetAttribLocation(shaderProgram, attribute_translation_name);
+	if (attribute_translation == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", attribute_translation_name);
 	}
 }
 
