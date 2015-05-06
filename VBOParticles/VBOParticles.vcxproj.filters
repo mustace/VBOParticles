@@ -29,6 +29,24 @@
     <None Include="cube.obj" />
     <None Include="sphere.obj" />
     <None Include="quad.obj" />
+    <None Include="negx.jpg">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="negy.jpg">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="negz.jpg">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="posx.jpg">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="posy.jpg">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="posz.jpg">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pool.h">

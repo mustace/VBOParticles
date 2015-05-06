@@ -7,12 +7,14 @@
 #include "triparticle.h"
 #include "obj.h"
 #include <glm/mat4x4.hpp>
+#include "SOIL.h"
 
-#define MAX_PARTICLES (32)
+
+#define MAX_PARTICLES (1000)
 #define LINE_SIZE (256)
 #define FRAME_MSEC (17)
-#define EMIT_FRAME_DELAY (2)
-#define EMIT_AMOUNT (5)
+#define EMIT_FRAME_DELAY (20)
+#define EMIT_AMOUNT (2)
 
 #define POSITION_COORDINATES (3)
 #define NORMAL_COORDINATES (3)
@@ -54,6 +56,17 @@ glm::mat4 proj;
 
 GLuint shaderProgram;
 GLint uniform_campos;
+
+GLuint cubemapID;
+
+char* textureStrings[6] = {
+	"posx.jpg",
+	"negx.jpg",
+	"posy.jpg",
+	"negy.jpg",
+	"posz.jpg",
+	"negz.jpg"
+};
 
 
 Pool<Particle> pool;
@@ -223,9 +236,33 @@ void onFrame(int value) {
 	glutTimerFunc(FRAME_MSEC, onFrame, 0);
 }
 
+void loadCubemap() {
+	glGenTextures(1, &cubemapID);
+	glActiveTexture(GL_TEXTURE0);
+
+	int width, height;
+	unsigned char* image;
+	for (GLuint i = 0; i < 6; i++)
+	{
+		image = SOIL_load_image(textureStrings[i], &width, &height, 0, SOIL_LOAD_RGB);
+		glTexImage2D(
+			GL_TEXTURE_CUBE_MAP_POSITIVE_X + i,
+			0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image
+			);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+}
 
 // Setup before we run
 void init(){
+	// Load in cubemap
+	loadCubemap();
+
 	glClearColor(0, 0, 0, 1);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
@@ -241,7 +278,6 @@ void init(){
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT /* or GL_BACK or even GL_FRONT_AND_BACK */);
 	glFrontFace(GL_CW /* or GL_CCW */);
-
 
 
 	// Prepare the shader program.
@@ -376,6 +412,20 @@ int main(int argc, char **argv) {
 		instanceVertices[i] *= 0.5f;
 
 	}
+
+	/*GLuint tex_cube = SOIL_load_OGL_cubemap
+		(
+		"posx.jpg",
+		"negx.jpg",
+		"posy.jpg",
+		"negy.jpg",
+		"posz.jpg",
+		"negz.jpg",
+		SOIL_LOAD_RGB,
+		SOIL_CREATE_NEW_ID,
+		SOIL_FLAG_MIPMAPS
+		);*/
+
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);

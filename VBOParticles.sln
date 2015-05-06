@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VBOParticles", "VBOParticles\VBOParticles.vcxproj", "{FD7D59F5-84D4-438B-BFDE-67D62BD8BEE2}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C32FB2B4-500C-43CD-A099-EECCE079D3F1} = {C32FB2B4-500C-43CD-A099-EECCE079D3F1}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{28FD118E-31FF-4455-B376-A59599FC12F4}"
 	ProjectSection(SolutionItems) = preProject
@@ -12,16 +15,30 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{28FD11
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SOIL", "Simple OpenGL Image Library\projects\VC9\SOIL.vcxproj", "{C32FB2B4-500C-43CD-A099-EECCE079D3F1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
 		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{FD7D59F5-84D4-438B-BFDE-67D62BD8BEE2}.Debug|Win32.ActiveCfg = Debug|Win32
 		{FD7D59F5-84D4-438B-BFDE-67D62BD8BEE2}.Debug|Win32.Build.0 = Debug|Win32
+		{FD7D59F5-84D4-438B-BFDE-67D62BD8BEE2}.Debug|x64.ActiveCfg = Debug|Win32
 		{FD7D59F5-84D4-438B-BFDE-67D62BD8BEE2}.Release|Win32.ActiveCfg = Release|Win32
 		{FD7D59F5-84D4-438B-BFDE-67D62BD8BEE2}.Release|Win32.Build.0 = Release|Win32
+		{FD7D59F5-84D4-438B-BFDE-67D62BD8BEE2}.Release|x64.ActiveCfg = Release|Win32
+		{C32FB2B4-500C-43CD-A099-EECCE079D3F1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C32FB2B4-500C-43CD-A099-EECCE079D3F1}.Debug|Win32.Build.0 = Debug|Win32
+		{C32FB2B4-500C-43CD-A099-EECCE079D3F1}.Debug|x64.ActiveCfg = Debug|x64
+		{C32FB2B4-500C-43CD-A099-EECCE079D3F1}.Debug|x64.Build.0 = Debug|x64
+		{C32FB2B4-500C-43CD-A099-EECCE079D3F1}.Release|Win32.ActiveCfg = Release|Win32
+		{C32FB2B4-500C-43CD-A099-EECCE079D3F1}.Release|Win32.Build.0 = Release|Win32
+		{C32FB2B4-500C-43CD-A099-EECCE079D3F1}.Release|x64.ActiveCfg = Release|x64
+		{C32FB2B4-500C-43CD-A099-EECCE079D3F1}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,3 +1,5 @@
+uniform samplerCube cubemap;
+
 varying vec4 vColor;
 varying vec3 vNormal;
 //varying vec4 vPos;
@@ -15,5 +17,6 @@ void main()
 
 	
 
-	gl_FragColor = vec4(reflected, 1.0);
+	// gl_FragColor = vec4(reflected, 1.0);
+	gl_FragColor = texture(cubemap, reflected);
 }

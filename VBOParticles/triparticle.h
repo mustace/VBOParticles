@@ -4,7 +4,7 @@
 #include "vertex.h"
 #include "color.h"
 
-#define LIFE_TIME (300)
+#define LIFE_TIME (600)
 
 static const vertex MIN_START{ -5.0, 5.0, -5.0 };
 static const vertex MAX_START { 5.0, 5.0, 5.0 };
