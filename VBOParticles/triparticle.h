@@ -6,8 +6,8 @@
 
 #define LIFE_TIME (300)
 
-static const vertex MIN_START{ -3.0, 2.0, 0.0 };
-static const vertex MAX_START { 2.0, 2.0, 0.0 };
+static const vertex MIN_START{ -5.0, 5.0, -5.0 };
+static const vertex MAX_START { 5.0, 5.0, 5.0 };
 
 struct Particle {
 

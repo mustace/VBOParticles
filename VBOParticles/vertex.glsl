@@ -1,9 +1,15 @@
+uniform vec3 camPos;
+
 attribute vec3 inNormal;
 attribute vec4 inColor;
 attribute vec3 inTranslation;
 attribute float inRotation;
 
 varying vec4 vColor;
+varying vec3 vNormal;
+//varying vec4 vPos;
+varying vec3 vDir;
+
 
 mat4 translation(float x, float y, float z) {
 
@@ -52,20 +58,26 @@ mat4 rotZ(float r) {
 
 void main()
 {
-
 	
-	vec4 n = vec4(inNormal, 1.0);
+	
+	vec4 n = vec4(inNormal, 0.0);
 
-	vColor = mix(inColor, n, 0.5);
+	// Pass color to fragment Shader
+	vColor = inColor;
 
+	// Rotation Matrix
 	mat4 r = rotY(inRotation);
 	
+	// Translation Matrix
+	mat4 t = translation(inTranslation.x, inTranslation.y, inTranslation.z);
 
-	//mat4 t = translation(inTranslation.x, inTranslation.y, inTranslation.z);
+	// Rotation -> Translation -> Model -> View matrix, all at once
+	mat4 mvtr = gl_ModelViewMatrix * t * r;
 
-	
-	vec4 pos = vec4(inTranslation,0.0) + (r * gl_Vertex); 
-	
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * pos;
+	vNormal = normalize(t * r * n);
+
+	vDir = (t * r * gl_Vertex) - camPos;
+
+	gl_Position = gl_ProjectionMatrix * mvtr * gl_Vertex;
 	
 }

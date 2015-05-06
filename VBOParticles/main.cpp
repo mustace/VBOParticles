@@ -32,12 +32,16 @@ GLfloat* instanceNormals;
 int instanceVertexCount;
 
 GLuint shaderProgram;
+GLint uniform_campos;
 GLint attribute_color;
 GLint attribute_translation;
 GLint attribute_rotz;
 GLint attribute_normal;
 
+
 Pool<Particle> pool;
+
+GLfloat cameraPosition[3] = { 0.0, 0.0, 10.0 };
 
 
 void keyboard(unsigned char key, int x, int y) {
@@ -65,6 +69,8 @@ void drawInBuffer(Particle* t, int index) {
 void display(){
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	glUniform3fv(uniform_campos, 1, cameraPosition);
 
 	// Load in new data to the buffers
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
@@ -184,15 +190,16 @@ void onFrame(int value) {
 
 // Setup before we run
 void init(){
-
 	glClearColor(0, 0, 0, 1);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
 	gluPerspective(40.0, 1.0, 1.0, 100.0);
 	glMatrixMode(GL_MODELVIEW);
-	gluLookAt(0.0, 0.0, 15.0,  // Set eye position, target position, and up direction.
+
+	gluLookAt(cameraPosition[0], cameraPosition[1], cameraPosition[2],  // Set eye position, target position, and up direction.
 		0.0, 0.0, 0.0,
 		0.0, 1.0, 0.);
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT /* or GL_BACK or even GL_FRONT_AND_BACK */);
@@ -228,6 +235,11 @@ void init(){
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
+
+	uniform_campos= glGetUniformLocation(shaderProgram, uniform_name_campos);
+	if (attribute_color == -1) {
+		fprintf(stderr, "Could not bind uniform %s\n", uniform_name_campos);
+	}
 	attribute_color = glGetAttribLocation(shaderProgram, attribute_name_color);
 	if (attribute_color == -1) {
 		fprintf(stderr, "Could not bind attribute %s\n", attribute_name_color);
