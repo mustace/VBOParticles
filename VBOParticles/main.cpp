@@ -228,40 +228,40 @@ void init(){
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
-	attribute_color = glGetAttribLocation(shaderProgram, attribute_color_name);
+	attribute_color = glGetAttribLocation(shaderProgram, attribute_name_color);
 	if (attribute_color == -1) {
-		fprintf(stderr, "Could not bind attribute %s\n", attribute_color_name);
+		fprintf(stderr, "Could not bind attribute %s\n", attribute_name_color);
 	}
 	else
 	{
-		printf("%s bound to %d\n", attribute_color_name, attribute_color);
+		printf("%s bound to %d\n", attribute_name_color, attribute_color);
 	}
 
-	attribute_translation = glGetAttribLocation(shaderProgram, attribute_translation_name);
+	attribute_translation = glGetAttribLocation(shaderProgram, attribute_name_translation);
 	if (attribute_translation == -1) {
-		fprintf(stderr, "Could not bind attribute %s\n", attribute_translation_name);
+		fprintf(stderr, "Could not bind attribute %s\n", attribute_name_translation);
 	}
 	else
 	{
-		printf("%s bound to %d\n", attribute_translation_name, attribute_translation);
+		printf("%s bound to %d\n", attribute_name_translation, attribute_translation);
 	}
 
-	attribute_rotz = glGetAttribLocation(shaderProgram, attribut_rotz_name);
+	attribute_rotz = glGetAttribLocation(shaderProgram, attribute_name_rotation);
 	if (attribute_rotz == -1) {
-		fprintf(stderr, "Could not bind attribute %s\n", attribut_rotz_name);
+		fprintf(stderr, "Could not bind attribute %s\n", attribute_name_rotation);
 	}
 	else
 	{
-		printf("%s bound to %d\n", attribut_rotz_name, attribute_rotz);
+		printf("%s bound to %d\n", attribute_name_rotation, attribute_rotz);
 	}
 
-	attribute_normal = glGetAttribLocation(shaderProgram, attribute_normal_name);
+	attribute_normal = glGetAttribLocation(shaderProgram, attribute_name_normal);
 	if (attribute_normal == -1) {
-		fprintf(stderr, "Could not bind attribute %s\n", attribute_normal_name);
+		fprintf(stderr, "Could not bind attribute %s\n", attribute_name_normal);
 	}
 	else
 	{
-		printf("%s bound to %d\n", attribute_normal_name, attribute_normal);
+		printf("%s bound to %d\n", attribute_name_normal, attribute_normal);
 	}
 
 }
