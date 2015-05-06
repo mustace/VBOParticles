@@ -6,6 +6,7 @@
 #include "vertex.h"
 #include "triparticle.h"
 #include "obj.h"
+#include <glm/mat4x4.hpp>
 
 #define MAX_PARTICLES (32)
 #define LINE_SIZE (256)
@@ -17,51 +18,86 @@
 #define NORMAL_COORDINATES (3)
 #define COLOR_COORDINATES (4)
 #define TRANSLATION_COORDINATES (3)
-#define ROTZ_COORDINATES (1)
+#define ROTATION_COORDINATES (1)
 
-GLuint colorBufferObject, translationBufferObject, rotZBufferObject;
+GLuint 
+	vboIdVertex, 
+	vboIdNormal, 
+	vboIdColor, 
+	vboIdTranslation, 
+	vboIdRotation,
+	vboIdScale;
 
-GLuint instanceVertexBufferObject, instanceNormalBufferObject;
+GLint
+	attributeIdVertex,
+	attributeIdNormal,
+	attributeIdColor,
+	attributeIdTranslation,
+	attributeIdRotation,
+	uniformIdScale;
 
-GLfloat vertexColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
-GLfloat vertexTranslations[MAX_PARTICLES * TRANSLATION_COORDINATES]; // XYZ format
-GLfloat vertexRotations[MAX_PARTICLES * ROTZ_COORDINATES]; // float format
+GLfloat particleColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
+GLfloat particleTranslations[MAX_PARTICLES * TRANSLATION_COORDINATES]; // XYZ format
+GLfloat particleRotations[MAX_PARTICLES * ROTATION_COORDINATES]; // float format
+GLfloat particleScales[] = {
+	0.5, 0.0, 0.0, 0.0,
+	0.0, 0.5, 0.0, 0.0,
+	0.0, 0.0, 0.5, 0.0,
+	0.0, 0.0, 0.0, 1.0
+}; // 4x4mat format
 
 GLfloat* instanceVertices;
 GLfloat* instanceNormals;
 int instanceVertexCount;
 
+glm::mat4 proj;
+
 GLuint shaderProgram;
 GLint uniform_campos;
-GLint attribute_color;
-GLint attribute_translation;
-GLint attribute_rotz;
-GLint attribute_normal;
 
 
 Pool<Particle> pool;
 
 GLfloat cameraPosition[3] = { 0.0, 0.0, 10.0 };
 
-
 void keyboard(unsigned char key, int x, int y) {
+
 	switch (key) {
 	case 033:
-	case 'q':
 		exit(1);
 		break;
+	case 'a':
+		particleScales[12] += 0.2;
+		break;
+	case 'd':
+		particleScales[12] -= 0.2;
+		break;
+	case 'w':
+		particleScales[14] += 0.2;
+		break;
+	case 's':
+		particleScales[14] -= 0.2;
+		break;
+	case 'q':
+		particleScales[13] -= 0.2;
+		break;
+	case 'e':
+		particleScales[13] += 0.2;
+		break;
+
 	}
+
 }
 
 void drawInBuffer(Particle* t, int index) {
 	
-	color* colorBuffer = (color*)(vertexColors + index * COLOR_COORDINATES);
-	vertex* translationBuffer = (vertex*)(vertexTranslations + index * TRANSLATION_COORDINATES);
-	GLfloat* rotzBuffer = vertexRotations + index * ROTZ_COORDINATES ;
+	color* colorBuffer = (color*)(particleColors + index * COLOR_COORDINATES);
+	vertex* translationBuffer = (vertex*)(particleTranslations + index * TRANSLATION_COORDINATES);
+	GLfloat* rotationBuffer = particleRotations + index * ROTATION_COORDINATES;
 
 	*colorBuffer = t->color;
 	*translationBuffer = t->position;
-	*rotzBuffer = t->rotZ;
+	*rotationBuffer = t->rotation;
 
 }
 
@@ -73,27 +109,27 @@ void display(){
 	glUniform3fv(uniform_campos, 1, cameraPosition);
 
 	// Load in new data to the buffers
-	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexTranslations), vertexTranslations, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, rotZBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexRotations), vertexRotations, GL_DYNAMIC_DRAW);
-	
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdColor);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particleColors), particleColors, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdTranslation);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particleTranslations), particleTranslations, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdRotation);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particleRotations), particleRotations, GL_DYNAMIC_DRAW);
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
 	// Specify how the shader finds data in the buffers
 
 	//glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject); // Sets active buffer
 	// =>
-	glBindBuffer(GL_ARRAY_BUFFER, instanceVertexBufferObject);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdVertex);
 
-	glEnableVertexAttribArray(0); // Enables an attribute slot
+	glEnableVertexAttribArray(attributeIdVertex); // Enables an attribute slot
 	
 	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL); // Specifies how to parse vertexarrayobject data into an attribute
 	// =>
 	glVertexAttribPointer(
-		0, // attribute. No particular reason for 0, but must match the layout in the shader.
+		attributeIdVertex, // attribute. No particular reason for 0, but must match the layout in the shader.
 		3, // size
 		GL_FLOAT, // type
 		GL_FALSE, // normalized?
@@ -101,10 +137,10 @@ void display(){
 		NULL // array buffer offset
 	);
 
-	glBindBuffer(GL_ARRAY_BUFFER, instanceNormalBufferObject);
-	glEnableVertexAttribArray(attribute_normal);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdNormal);
+	glEnableVertexAttribArray(attributeIdNormal);
 	glVertexAttribPointer(
-		attribute_normal, // attribute. No particular reason for 0, but must match the layout in the shader.
+		attributeIdNormal, // attribute. No particular reason for 0, but must match the layout in the shader.
 		3, // size
 		GL_FLOAT, // type
 		GL_FALSE, // normalized?
@@ -113,23 +149,23 @@ void display(){
 	);
 
 
-	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
-	glEnableVertexAttribArray(attribute_color);
-	glVertexAttribPointer(attribute_color, 4, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdColor);
+	glEnableVertexAttribArray(attributeIdColor);
+	glVertexAttribPointer(attributeIdColor, 4, GL_FLOAT, GL_FALSE, 0, NULL);
 
-	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
-	glEnableVertexAttribArray(attribute_translation);
-	glVertexAttribPointer(attribute_translation, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdTranslation);
+	glEnableVertexAttribArray(attributeIdTranslation);
+	glVertexAttribPointer(attributeIdTranslation, 3, GL_FLOAT, GL_FALSE, 0, NULL);
 
-	glBindBuffer(GL_ARRAY_BUFFER, rotZBufferObject);
-	glEnableVertexAttribArray(attribute_rotz);
-	glVertexAttribPointer(attribute_rotz, 1, GL_FLOAT, GL_FALSE, 0, NULL);
-	
-	glVertexAttribDivisor(0, 0); 
-	glVertexAttribDivisor(attribute_normal, 0); 
-	glVertexAttribDivisor(attribute_color, 1); 
-	glVertexAttribDivisor(attribute_translation, 1); 
-	glVertexAttribDivisor(attribute_rotz, 1); 
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdRotation);
+	glEnableVertexAttribArray(attributeIdRotation);
+	glVertexAttribPointer(attributeIdRotation, 1, GL_FLOAT, GL_FALSE, 0, NULL);
+
+	glVertexAttribDivisor(attributeIdVertex, 0); 
+	glVertexAttribDivisor(attributeIdNormal, 0); 
+	glVertexAttribDivisor(attributeIdColor, 1); 
+	glVertexAttribDivisor(attributeIdTranslation, 1); 
+	glVertexAttribDivisor(attributeIdRotation, 1); 
 
 	glDrawArraysInstanced(GL_TRIANGLES, 0, instanceVertexCount, pool.count());
 
@@ -137,11 +173,11 @@ void display(){
 	//glDrawArrays(GL_TRIANGLES, 0, pool.count() * 3); // 3 vertices for each tri
 
 	// Reset the holy global state machine that is openGL
-	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(attribute_normal);
-	glDisableVertexAttribArray(attribute_color);
-	glDisableVertexAttribArray(attribute_translation);
-	glDisableVertexAttribArray(attribute_rotz);
+	glDisableVertexAttribArray(attributeIdVertex);
+	glDisableVertexAttribArray(attributeIdNormal);
+	glDisableVertexAttribArray(attributeIdColor);
+	glDisableVertexAttribArray(attributeIdTranslation);
+	glDisableVertexAttribArray(attributeIdRotation);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
@@ -200,6 +236,7 @@ void init(){
 		0.0, 0.0, 0.0,
 		0.0, 1.0, 0.);
 
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT /* or GL_BACK or even GL_FRONT_AND_BACK */);
@@ -212,68 +249,92 @@ void init(){
 	glUseProgram(shaderProgram);
 
 	// generate "pointers" (names) for each buffer
-	glGenBuffers(1, &colorBufferObject);
-	glGenBuffers(1, &translationBufferObject);
-	glGenBuffers(1, &rotZBufferObject);
-	// NEW INSTANCE BUFFER
-	glGenBuffers(1, &instanceVertexBufferObject);
-	glGenBuffers(1, &instanceNormalBufferObject);
+	glGenBuffers(1, &vboIdVertex);
+	glGenBuffers(1, &vboIdNormal); 
+	glGenBuffers(1, &vboIdColor);
+	glGenBuffers(1, &vboIdTranslation);
+	glGenBuffers(1, &vboIdRotation);
+	glGenBuffers(1, &vboIdScale);
+	
 	
 	// put data in buffers - glBindBuffer sets the active buffer, glBufferData pours data in the active buffer
-	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_DYNAMIC_DRAW); 
-	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexTranslations), vertexTranslations, GL_DYNAMIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, rotZBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexRotations), vertexRotations, GL_DYNAMIC_DRAW);
-	// NEW INSTANCE BUFFER
-	glBindBuffer(GL_ARRAY_BUFFER, instanceVertexBufferObject);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdVertex);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * instanceVertexCount * 3, instanceVertices, GL_STATIC_DRAW);
-	glBindBuffer(GL_ARRAY_BUFFER, instanceNormalBufferObject);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdNormal);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * instanceVertexCount * 3, instanceNormals, GL_STATIC_DRAW);
 
-
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdColor);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particleColors), particleColors, GL_DYNAMIC_DRAW); 
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdTranslation);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particleTranslations), particleTranslations, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdRotation);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particleRotations), particleRotations, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdScale);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particleScales), particleScales, GL_DYNAMIC_DRAW);
+	
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
+	attributeIdVertex = glGetAttribLocation(shaderProgram, attributeNameVertex);
+	if (attributeIdVertex == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", attributeNameVertex);
+	}
+	else
+	{
+		printf("%s bound to %d\n", attributeNameVertex, attributeIdVertex);
+	}
 
 	uniform_campos= glGetUniformLocation(shaderProgram, uniform_name_campos);
-	if (attribute_color == -1) {
+	if (uniform_campos == -1) {
 		fprintf(stderr, "Could not bind uniform %s\n", uniform_name_campos);
 	}
-	attribute_color = glGetAttribLocation(shaderProgram, attribute_name_color);
-	if (attribute_color == -1) {
-		fprintf(stderr, "Could not bind attribute %s\n", attribute_name_color);
-	}
 	else
 	{
-		printf("%s bound to %d\n", attribute_name_color, attribute_color);
+		printf("%s bound to %d\n", uniform_name_campos, uniform_campos);
 	}
 
-	attribute_translation = glGetAttribLocation(shaderProgram, attribute_name_translation);
-	if (attribute_translation == -1) {
-		fprintf(stderr, "Could not bind attribute %s\n", attribute_name_translation);
+	attributeIdNormal = glGetAttribLocation(shaderProgram, attributeNameNormal);
+	if (attributeIdNormal == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", attributeNameNormal);
 	}
 	else
 	{
-		printf("%s bound to %d\n", attribute_name_translation, attribute_translation);
+		printf("%s bound to %d\n", attributeNameNormal, attributeIdNormal);
 	}
 
-	attribute_rotz = glGetAttribLocation(shaderProgram, attribute_name_rotation);
-	if (attribute_rotz == -1) {
-		fprintf(stderr, "Could not bind attribute %s\n", attribute_name_rotation);
+	attributeIdColor = glGetAttribLocation(shaderProgram, attributeNameColor);
+	if (attributeIdColor == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", attributeNameColor);
 	}
 	else
 	{
-		printf("%s bound to %d\n", attribute_name_rotation, attribute_rotz);
+		printf("%s bound to %d\n", attributeNameColor, attributeIdColor);
 	}
 
-	attribute_normal = glGetAttribLocation(shaderProgram, attribute_name_normal);
-	if (attribute_normal == -1) {
-		fprintf(stderr, "Could not bind attribute %s\n", attribute_name_normal);
+	attributeIdTranslation = glGetAttribLocation(shaderProgram, attributeNameTranslation);
+	if (attributeIdTranslation == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", attributeNameTranslation);
 	}
 	else
 	{
-		printf("%s bound to %d\n", attribute_name_normal, attribute_normal);
+		printf("%s bound to %d\n", attributeNameTranslation, attributeIdTranslation);
+	}
+
+	attributeIdRotation = glGetAttribLocation(shaderProgram, attributeNameRotation);
+	if (attributeIdRotation == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", attributeNameRotation);
+	}
+	else
+	{
+		printf("%s bound to %d\n", attributeNameRotation, attributeIdRotation);
+	}
+
+	uniformIdScale = glGetUniformLocation(shaderProgram, uniformNameScale);
+	if (uniformIdScale == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", uniformNameScale);
+	}
+	else
+	{
+		printf("%s bound to %d\n", uniformNameScale, uniformIdScale);
 	}
 
 }
@@ -310,11 +371,11 @@ int main(int argc, char **argv) {
 
 	}
 
-	for (int i = 0; i < (T * 3 * 3); ++i)
-	{
-		instanceVertices[i] *= 0.5;
-	}
+	for (int i = 0; i < T * 9; ++i) {
 
+		instanceVertices[i] *= 0.5f;
+
+	}
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
