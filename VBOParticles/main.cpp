@@ -6,6 +6,7 @@
 #include "vertex.h"
 #include "triparticle.h"
 #include "obj.h"
+#include <glm/mat4x4.hpp>
 
 #define MAX_PARTICLES (32)
 #define LINE_SIZE (256)
@@ -17,52 +18,82 @@
 #define NORMAL_COORDINATES (3)
 #define COLOR_COORDINATES (4)
 #define TRANSLATION_COORDINATES (3)
-#define ROTZ_COORDINATES (1)
+#define ROTATION_COORDINATES (1)
 
 GLuint 
 	vboIdVertex, 
 	vboIdNormal, 
 	vboIdColor, 
 	vboIdTranslation, 
-	vboIdRotation;
+	vboIdRotation,
+	vboIdScale;
 
 GLint
 	attributeIdVertex,
 	attributeIdNormal,
 	attributeIdColor,
 	attributeIdTranslation,
-	attributeIdRotation;
+	attributeIdRotation,
+	uniformIdScale;
 
 GLfloat particleColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
 GLfloat particleTranslations[MAX_PARTICLES * TRANSLATION_COORDINATES]; // XYZ format
-GLfloat particleRotations[MAX_PARTICLES * ROTZ_COORDINATES]; // float format
+GLfloat particleRotations[MAX_PARTICLES * ROTATION_COORDINATES]; // float format
+GLfloat particleScales[] = {
+	0.5, 0.0, 0.0, 0.0,
+	0.0, 0.5, 0.0, 0.0,
+	0.0, 0.0, 0.5, 0.0,
+	0.0, 0.0, -15.0, 1.0
+}; // 4x4mat format
 
 GLfloat* instanceVertices;
 GLfloat* instanceNormals;
 int instanceVertexCount;
+
+glm::mat4 proj;
 
 GLuint shaderProgram;
 
 Pool<Particle> pool;
 
 void keyboard(unsigned char key, int x, int y) {
+
 	switch (key) {
 	case 033:
-	case 'q':
 		exit(1);
 		break;
+	case 'a':
+		particleScales[12] += 0.2;
+		break;
+	case 'd':
+		particleScales[12] -= 0.2;
+		break;
+	case 'w':
+		particleScales[14] += 0.2;
+		break;
+	case 's':
+		particleScales[14] -= 0.2;
+		break;
+	case 'q':
+		particleScales[13] -= 0.2;
+		break;
+	case 'e':
+		particleScales[13] += 0.2;
+		break;
+
 	}
+
 }
 
 void drawInBuffer(Particle* t, int index) {
 	
 	color* colorBuffer = (color*)(particleColors + index * COLOR_COORDINATES);
 	vertex* translationBuffer = (vertex*)(particleTranslations + index * TRANSLATION_COORDINATES);
-	GLfloat* rotzBuffer = particleRotations + index * ROTZ_COORDINATES ;
+	GLfloat* rotationBuffer = particleRotations + index * ROTATION_COORDINATES;
 
 	*colorBuffer = t->color;
 	*translationBuffer = t->position;
-	*rotzBuffer = t->rotZ;
+	*rotationBuffer = t->rotation;
 
 }
 
@@ -78,7 +109,7 @@ void display(){
 	glBufferData(GL_ARRAY_BUFFER, sizeof(particleTranslations), particleTranslations, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdRotation);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(particleRotations), particleRotations, GL_DYNAMIC_DRAW);
-	
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
 	// Specify how the shader finds data in the buffers
@@ -123,7 +154,7 @@ void display(){
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdRotation);
 	glEnableVertexAttribArray(attributeIdRotation);
 	glVertexAttribPointer(attributeIdRotation, 1, GL_FLOAT, GL_FALSE, 0, NULL);
-	
+
 	glVertexAttribDivisor(attributeIdVertex, 0); 
 	glVertexAttribDivisor(attributeIdNormal, 0); 
 	glVertexAttribDivisor(attributeIdColor, 1); 
@@ -195,9 +226,6 @@ void init(){
 	glLoadIdentity();
 	gluPerspective(40.0, 1.0, 1.0, 100.0);
 	glMatrixMode(GL_MODELVIEW);
-	gluLookAt(0.0, 0.0, 15.0,  // Set eye position, target position, and up direction.
-		0.0, 0.0, 0.0,
-		0.0, 1.0, 0.);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT /* or GL_BACK or even GL_FRONT_AND_BACK */);
@@ -215,6 +243,7 @@ void init(){
 	glGenBuffers(1, &vboIdColor);
 	glGenBuffers(1, &vboIdTranslation);
 	glGenBuffers(1, &vboIdRotation);
+	glGenBuffers(1, &vboIdScale);
 	
 	
 	// put data in buffers - glBindBuffer sets the active buffer, glBufferData pours data in the active buffer
@@ -229,6 +258,8 @@ void init(){
 	glBufferData(GL_ARRAY_BUFFER, sizeof(particleTranslations), particleTranslations, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdRotation);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(particleRotations), particleRotations, GL_DYNAMIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, vboIdScale);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particleScales), particleScales, GL_DYNAMIC_DRAW);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
@@ -277,6 +308,15 @@ void init(){
 		printf("%s bound to %d\n", attributeNameRotation, attributeIdRotation);
 	}
 
+	uniformIdScale = glGetUniformLocation(shaderProgram, uniformNameScale);
+	if (uniformIdScale == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", uniformNameScale);
+	}
+	else
+	{
+		printf("%s bound to %d\n", uniformNameScale, uniformIdScale);
+	}
+
 }
 
 int main(int argc, char **argv) {
@@ -310,12 +350,6 @@ int main(int argc, char **argv) {
 		norms[i * 3 + 2] = n;
 
 	}
-
-	for (int i = 0; i < (T * 3 * 3); ++i)
-	{
-		instanceVertices[i] *= 0.5;
-	}
-
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);

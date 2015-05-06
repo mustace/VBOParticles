@@ -14,7 +14,7 @@ struct Particle {
 	vertex position;
 	vertex velocity;
 
-	GLfloat rotZ;
+	GLfloat rotation;
 	GLfloat velZ;
 
 	color color;
@@ -41,7 +41,7 @@ void init_random_triparticle(
 		0.0
 	};
 
-	t->rotZ = 0.0f;
+	t->rotation = 0.0f;
 	t->velZ = randFloatRange(-0.02, 0.02);
 
 	t->lifetime = LIFE_TIME;
@@ -56,7 +56,7 @@ void update_triparticle(Particle* t) {
 
 	t->position = vertex_add(t->position, t->velocity);
 
-	t->rotZ += t->velZ;
+	t->rotation += t->velZ;
 }
 
 #endif

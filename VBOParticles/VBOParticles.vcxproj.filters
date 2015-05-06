@@ -27,6 +27,8 @@
     <None Include="fragment.glsl" />
     <None Include="vertex.glsl" />
     <None Include="cube.obj" />
+    <None Include="sphere.obj" />
+    <None Include="quad.obj" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pool.h">

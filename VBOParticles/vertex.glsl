@@ -2,6 +2,7 @@ attribute vec3 inNormal;
 attribute vec4 inColor;
 attribute vec3 inTranslation;
 attribute float inRotation;
+uniform mat4 inScale;
 
 varying vec4 vColor;
 
@@ -53,19 +54,18 @@ mat4 rotZ(float r) {
 void main()
 {
 
+	vec4 n = vec4(normalize(inNormal), 1.0);
 	
-	vec4 n = vec4(inNormal, 1.0);
-
 	vColor = mix(inColor, n, 0.5);
 
 	mat4 r = rotY(inRotation);
 	
 
-	//mat4 t = translation(inTranslation.x, inTranslation.y, inTranslation.z);
+	//mat4 t = inColor + translation(inTranslation.x, inTranslation.y, inTranslation.z);
 
 	
 	vec4 pos = vec4(inTranslation,0.0) + (r * gl_Vertex); 
 	
-	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * pos;
+	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * inScale * pos;
 	
 }
