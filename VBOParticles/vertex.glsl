@@ -1,3 +1,4 @@
+attribute vec3 inNormal;
 attribute vec4 inColor;
 attribute vec3 inTranslation;
 attribute float inRotation;
@@ -51,15 +52,20 @@ mat4 rotZ(float r) {
 
 void main()
 {
-	vColor = inColor;
+
 	
-	mat4 t = translation(inTranslation.x, inTranslation.y, inTranslation.z);
+	vec4 n = vec4(inNormal, 1.0);
+
+	vColor = mix(inColor, n, 0.5);
 
 	mat4 r = rotY(inRotation);
-
-	vec4 pos = t * (r * gl_Vertex); 
 	
-	//gl_Position = ftransform();
+
+	//mat4 t = translation(inTranslation.x, inTranslation.y, inTranslation.z);
+
+	
+	vec4 pos = vec4(inTranslation,0.0) + (r * gl_Vertex); 
+	
 	gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * pos;
 	
 }

@@ -34,10 +34,10 @@ vertex vertex_cross(vertex a, vertex b) {
 	};
 }
 
-vertex vertex_normal(vertex* vs)
+vertex vertex_normal(vertex v1, vertex v2, vertex v3)
 {
-	vertex e1 = vertex_sub(vs[1], vs[0]);
-	vertex e2 = vertex_sub(vs[2], vs[0]);
+	vertex e1 = vertex_sub(v2, v1);
+	vertex e2 = vertex_sub(v3, v1);
 
 	return vertex_cross(e1, e2);
 }

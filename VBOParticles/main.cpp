@@ -21,19 +21,21 @@
 
 GLuint colorBufferObject, translationBufferObject, rotZBufferObject;
 
-GLuint instanceBufferObject;
+GLuint instanceVertexBufferObject, instanceNormalBufferObject;
 
 GLfloat vertexColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
 GLfloat vertexTranslations[MAX_PARTICLES * TRANSLATION_COORDINATES]; // XYZ format
 GLfloat vertexRotations[MAX_PARTICLES * ROTZ_COORDINATES]; // float format
 
-GLfloat* instanceData;
+GLfloat* instanceVertices;
+GLfloat* instanceNormals;
 int instanceVertexCount;
 
 GLuint shaderProgram;
 GLint attribute_color;
 GLint attribute_translation;
 GLint attribute_rotz;
+GLint attribute_normal;
 
 Pool<Particle> pool;
 
@@ -78,7 +80,7 @@ void display(){
 
 	//glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject); // Sets active buffer
 	// =>
-	glBindBuffer(GL_ARRAY_BUFFER, instanceBufferObject);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVertexBufferObject);
 
 	glEnableVertexAttribArray(0); // Enables an attribute slot
 	
@@ -90,8 +92,20 @@ void display(){
 		GL_FLOAT, // type
 		GL_FALSE, // normalized?
 		0, // stride
-		(void*)0 // array buffer offset
+		NULL // array buffer offset
 	);
+
+	glBindBuffer(GL_ARRAY_BUFFER, instanceNormalBufferObject);
+	glEnableVertexAttribArray(attribute_normal);
+	glVertexAttribPointer(
+		attribute_normal, // attribute. No particular reason for 0, but must match the layout in the shader.
+		3, // size
+		GL_FLOAT, // type
+		GL_FALSE, // normalized?
+		0, // stride
+		NULL // array buffer offset
+	);
+
 
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
 	glEnableVertexAttribArray(attribute_color);
@@ -105,9 +119,8 @@ void display(){
 	glEnableVertexAttribArray(attribute_rotz);
 	glVertexAttribPointer(attribute_rotz, 1, GL_FLOAT, GL_FALSE, 0, NULL);
 	
-	// Draw from the specified part of the array
-	glVertexAttribDivisor(0, 0); // particles vertices : always reuse the same 4 vertices -> 0
-	glVertexAttribDivisor(1, 1); // positions : one per quad (its center) -> 1
+	glVertexAttribDivisor(0, 0); 
+	glVertexAttribDivisor(attribute_normal, 0); 
 	glVertexAttribDivisor(attribute_color, 1); 
 	glVertexAttribDivisor(attribute_translation, 1); 
 	glVertexAttribDivisor(attribute_rotz, 1); 
@@ -119,7 +132,7 @@ void display(){
 
 	// Reset the holy global state machine that is openGL
 	glDisableVertexAttribArray(0);
-	glDisableVertexAttribArray(1);
+	glDisableVertexAttribArray(attribute_normal);
 	glDisableVertexAttribArray(attribute_color);
 	glDisableVertexAttribArray(attribute_translation);
 	glDisableVertexAttribArray(attribute_rotz);
@@ -196,7 +209,8 @@ void init(){
 	glGenBuffers(1, &translationBufferObject);
 	glGenBuffers(1, &rotZBufferObject);
 	// NEW INSTANCE BUFFER
-	glGenBuffers(1, &instanceBufferObject);
+	glGenBuffers(1, &instanceVertexBufferObject);
+	glGenBuffers(1, &instanceNormalBufferObject);
 	
 	// put data in buffers - glBindBuffer sets the active buffer, glBufferData pours data in the active buffer
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
@@ -206,8 +220,11 @@ void init(){
 	glBindBuffer(GL_ARRAY_BUFFER, rotZBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexRotations), vertexRotations, GL_DYNAMIC_DRAW);
 	// NEW INSTANCE BUFFER
-	glBindBuffer(GL_ARRAY_BUFFER, instanceBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * instanceVertexCount * 3, instanceData, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceVertexBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * instanceVertexCount * 3, instanceVertices, GL_STATIC_DRAW);
+	glBindBuffer(GL_ARRAY_BUFFER, instanceNormalBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * instanceVertexCount * 3, instanceNormals, GL_STATIC_DRAW);
+
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
@@ -215,15 +232,36 @@ void init(){
 	if (attribute_color == -1) {
 		fprintf(stderr, "Could not bind attribute %s\n", attribute_color_name);
 	}
+	else
+	{
+		printf("%s bound to %d\n", attribute_color_name, attribute_color);
+	}
 
 	attribute_translation = glGetAttribLocation(shaderProgram, attribute_translation_name);
 	if (attribute_translation == -1) {
 		fprintf(stderr, "Could not bind attribute %s\n", attribute_translation_name);
 	}
+	else
+	{
+		printf("%s bound to %d\n", attribute_translation_name, attribute_translation);
+	}
 
 	attribute_rotz = glGetAttribLocation(shaderProgram, attribut_rotz_name);
 	if (attribute_rotz == -1) {
 		fprintf(stderr, "Could not bind attribute %s\n", attribut_rotz_name);
+	}
+	else
+	{
+		printf("%s bound to %d\n", attribut_rotz_name, attribute_rotz);
+	}
+
+	attribute_normal = glGetAttribLocation(shaderProgram, attribute_normal_name);
+	if (attribute_normal == -1) {
+		fprintf(stderr, "Could not bind attribute %s\n", attribute_normal_name);
+	}
+	else
+	{
+		printf("%s bound to %d\n", attribute_normal_name, attribute_normal);
 	}
 
 }
@@ -238,9 +276,11 @@ int main(int argc, char **argv) {
 	int T = triangles.size();
 
 	instanceVertexCount = T * 3;
-	instanceData = (GLfloat*)malloc((sizeof(GLfloat)) * 3 * instanceVertexCount);
+	instanceVertices = (GLfloat*)malloc((sizeof(GLfloat)) * 3 * instanceVertexCount);
+	instanceNormals = (GLfloat*)malloc((sizeof(GLfloat)) * 3 * instanceVertexCount);
 
-	vertex* verts = (vertex*)instanceData;
+	vertex* verts = (vertex*)instanceVertices;
+	vertex* norms = (vertex*)instanceNormals;
 
 	for (int i = 0; i < T; ++i)
 	{
@@ -251,11 +291,16 @@ int main(int argc, char **argv) {
 		verts[i * 3 + 0] = v1;
 		verts[i * 3 + 1] = v2;
 		verts[i * 3 + 2] = v3;
+		vertex n = vertex_normal(v1, v2, v3);
+		norms[i * 3 + 0] = n;
+		norms[i * 3 + 1] = n;
+		norms[i * 3 + 2] = n;
+
 	}
 
 	for (int i = 0; i < (T * 3 * 3); ++i)
 	{
-		instanceData[i] *= 0.5;
+		instanceVertices[i] *= 0.5;
 	}
 
 

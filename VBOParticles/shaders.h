@@ -8,5 +8,6 @@ GLuint LoadShaderProgram(const char *vert_path = "vertex.glsl", const char *frag
 char* attribute_color_name = "inColor";
 char* attribute_translation_name = "inTranslation";
 char* attribut_rotz_name = "inRotation";
+char* attribute_normal_name = "inNormal";
 
 #endif
