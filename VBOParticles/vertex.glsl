@@ -16,8 +16,10 @@ void main()
 	float y = inTranslation.y;
 	float z = inTranslation.z;
 
+	float s = sin(inRotZ);
+
 	mat4 t = mat4(
-		inRotZ, 0.0, 0.0, 0.0,
+		  s, 0.0, 0.0, 0.0,
 		0.0, 1.0, 0.0, 0.0,
 		0.0, 0.0, 1.0, 0.0,
 		  x,   y,   z, 1.0

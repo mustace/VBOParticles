@@ -1,30 +1,25 @@
 #include "GL\glew.h"
 #include "GL\freeglut.h"
 #include <iostream>
-#include "particles.h"
 #include "pool.h"
 #include "shaders.h"
 #include "keyboard.h"
+#include "vertex.h"
+#include "triparticle.h"
 
 #define MAX_PARTICLES (10000)
 #define LINE_SIZE (256)
 #define FRAME_MSEC (17)
 #define EMIT_FRAME_DELAY (2)
 #define EMIT_AMOUNT (5)
-#define MIN_TRI_SIZE (0.3)
-#define MAX_TRI_SIZE (0.8)
-#define LIFE_TIME (300)
 
 #define POSITION_COORDINATES (3)
 #define NORMAL_COORDINATES (3)
 #define COLOR_COORDINATES (4)
 #define TRANSLATION_COORDINATES (3)
 #define ROTZ_COORDINATES (1)
-#include "utils.h"
 
 GLuint vertexBufferObject, normalBufferObject, colorBufferObject, translationBufferObject, rotZBufferObject;
-
-GLfloat interleavedData[] = { 0, 2, -4, 1, 0, 0, -2, -2, -4, 0, 1, 0, 2, -2, -4, 0, 0, 1 };
 
 GLfloat vertexPositions[MAX_PARTICLES * POSITION_COORDINATES]; // XYZ format
 GLfloat vertexNormals[MAX_PARTICLES* NORMAL_COORDINATES]; // not used atm
@@ -39,100 +34,6 @@ GLint attribute_rotz;
 
 Pool<Triparticle> pool;
 
-const vertex MIN_START{
-	-3.0,
-	2.0,
-	0.0
-};
-
-const vertex MAX_START{
-	2.0,
-	2.0,
-	0.0
-};
-
-GLfloat randFloatRange(GLfloat M, GLfloat N)
-{
-	return M + (rand() / (RAND_MAX / (N - M)));
-}
-
-// Returns random particle, xyz within same range
-vertex make_random_vertex(GLfloat min, GLfloat max) {
-	return{
-		randFloatRange(min, max),
-		randFloatRange(min, max),
-		randFloatRange(min, max)
-	};
-}
-
-// Returns random particle, xyz seperate ranges
-vertex make_random_vertex(GLfloat xMin, GLfloat xMax,
-	GLfloat yMin, GLfloat yMax,
-	GLfloat zMin, GLfloat zMax) {
-	return{
-		randFloatRange(xMin, xMax),
-		randFloatRange(yMin, yMax),
-		randFloatRange(zMin, zMax)
-	};
-}
-
-color make_random_color() {
-	return{
-		randFloatRange(0.0, 1.0),
-		randFloatRange(0.0, 1.0),
-		randFloatRange(0.0, 1.0),
-		randFloatRange(0.0, 1.0)
-	};
-}
-
-void init_random_triparticle(Triparticle *t,
-	GLfloat minSize,
-	GLfloat maxSize,
-	vertex minPos,
-	vertex maxPos) {
-
-	// Random position between min and max
-	t->pos = make_random_vertex(
-		minPos.x, maxPos.x,
-		minPos.y, maxPos.y,
-		minPos.z, maxPos.z);
-
-	t->v1 = make_random_vertex(minSize, maxSize);
-	t->v2 = make_random_vertex(minSize, maxSize);
-	t->v3 = make_random_vertex(minSize, maxSize);
-
-	// Speed is not random yet, just some downwards direction for now 
-
-	t->velocity = {
-		0.0,
-		randFloatRange(-0.03, -0.001),
-		0.0
-	};
-
-	t->rotZ = 0.0f;
-	t->velZ = 0.01f;
-
-	t->lifetime = LIFE_TIME;
-
-	t->color = make_random_color();
-
-}
-
-void update_triparticle(Triparticle* t) {
-	vertex newPos = t->pos;
-
-	newPos.x += t->velocity.x;
-	newPos.y += t->velocity.y;
-	newPos.z += t->velocity.z;
-
-	t->lifetime--;
-
-	t->pos = newPos;
-
-	t->rotZ += t->velZ;
-}
-
-
 void drawInBuffer(Triparticle* t, int index) {
 	// tri verts in world space
 	vertex ps[3];
@@ -141,23 +42,23 @@ void drawInBuffer(Triparticle* t, int index) {
 	ps[0] = t->v1;
 	ps[1] = t->v2;
 	ps[2] = t->v3;
-	
+
 	vertex n = vertex_normal(ps);
 
-	vertex* posBuffer = (vertex*) (vertexPositions + index * POSITION_COORDINATES * 3); // 3 verts to a particle
-	vertex* normalBuffer = (vertex*) (vertexNormals + index * NORMAL_COORDINATES * 3);
+	vertex* posBuffer = (vertex*)(vertexPositions + index * POSITION_COORDINATES * 3); // 3 verts to a particle
+	vertex* normalBuffer = (vertex*)(vertexNormals + index * NORMAL_COORDINATES * 3);
 	color* colorBuffer = (color*)(vertexColors + index *COLOR_COORDINATES * 3);
 	vertex* translationBuffer = (vertex*)(vertexTranslations + index * TRANSLATION_COORDINATES * 3);
 	GLfloat* rotzBuffer = vertexRotZs + index * ROTZ_COORDINATES * 3;
 
-	for (int i = 0; i < 3; ++i) { 
+	for (int i = 0; i < 3; ++i) {
 
 		posBuffer[i] = ps[i];
 		normalBuffer[i] = n;
 		colorBuffer[i] = t->color;
 		translationBuffer[i] = t->pos;
 		rotzBuffer[i] = t->rotZ;
-		
+
 	}
 
 }

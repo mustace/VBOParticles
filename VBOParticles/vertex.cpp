@@ -1,7 +1,4 @@
-#ifndef UTILS
-#define UTILS
-
-#include "particles.h"
+#include "vertex.h"
 
 vertex vertex_normal(vertex* vs)
 {
@@ -37,8 +34,4 @@ vertex vertex_add(vertex a, vertex b)
 	c.z = a.z + b.z;
 
 	return c;
-
-
 }
-
-#endif

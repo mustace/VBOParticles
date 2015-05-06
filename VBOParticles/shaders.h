@@ -1,7 +1,7 @@
-#include <GL/glew.h>
-
 #ifndef SHADERS
 #define SHADERS
+
+#include <GL/glew.h>
 
 GLuint LoadShaderProgram(const char *vert_path = "vertex.glsl", const char *frag_path = "fragment.glsl");
 
