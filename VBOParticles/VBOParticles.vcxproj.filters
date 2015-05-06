@@ -21,23 +21,12 @@
     <ClCompile Include="shaders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="keyboard.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="quad.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="vertex.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="triparticle.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
     <None Include="fragment.glsl" />
     <None Include="vertex.glsl" />
+    <None Include="cube.obj" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pool.h">
@@ -46,13 +35,19 @@
     <ClInclude Include="shaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="keyboard.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="vertex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="triparticle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="random.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="color.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="obj.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

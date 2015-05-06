@@ -3,11 +3,11 @@
 #include <iostream>
 #include "pool.h"
 #include "shaders.h"
-#include "keyboard.h"
 #include "vertex.h"
 #include "triparticle.h"
+#include "obj.h"
 
-#define MAX_PARTICLES (10000)
+#define MAX_PARTICLES (32)
 #define LINE_SIZE (256)
 #define FRAME_MSEC (17)
 #define EMIT_FRAME_DELAY (2)
@@ -19,47 +19,43 @@
 #define TRANSLATION_COORDINATES (3)
 #define ROTZ_COORDINATES (1)
 
-GLuint vertexBufferObject, normalBufferObject, colorBufferObject, translationBufferObject, rotZBufferObject;
+GLuint colorBufferObject, translationBufferObject, rotZBufferObject;
 
-GLfloat vertexPositions[MAX_PARTICLES * POSITION_COORDINATES]; // XYZ format
-GLfloat vertexNormals[MAX_PARTICLES* NORMAL_COORDINATES]; // not used atm
+GLuint instanceBufferObject;
+
 GLfloat vertexColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
 GLfloat vertexTranslations[MAX_PARTICLES * TRANSLATION_COORDINATES]; // XYZ format
-GLfloat vertexRotZs[MAX_PARTICLES * ROTZ_COORDINATES]; // float format
+GLfloat vertexRotations[MAX_PARTICLES * ROTZ_COORDINATES]; // float format
+
+GLfloat* instanceData;
+int instanceVertexCount;
 
 GLuint shaderProgram;
 GLint attribute_color;
 GLint attribute_translation;
 GLint attribute_rotz;
 
-Pool<Triparticle> pool;
+Pool<Particle> pool;
 
-void drawInBuffer(Triparticle* t, int index) {
-	// tri verts in world space
-	vertex ps[3];
-	// find world coords for verts
 
-	ps[0] = t->v1;
-	ps[1] = t->v2;
-	ps[2] = t->v3;
-
-	vertex n = vertex_normal(ps);
-
-	vertex* posBuffer = (vertex*)(vertexPositions + index * POSITION_COORDINATES * 3); // 3 verts to a particle
-	vertex* normalBuffer = (vertex*)(vertexNormals + index * NORMAL_COORDINATES * 3);
-	color* colorBuffer = (color*)(vertexColors + index *COLOR_COORDINATES * 3);
-	vertex* translationBuffer = (vertex*)(vertexTranslations + index * TRANSLATION_COORDINATES * 3);
-	GLfloat* rotzBuffer = vertexRotZs + index * ROTZ_COORDINATES * 3;
-
-	for (int i = 0; i < 3; ++i) {
-
-		posBuffer[i] = ps[i];
-		normalBuffer[i] = n;
-		colorBuffer[i] = t->color;
-		translationBuffer[i] = t->pos;
-		rotzBuffer[i] = t->rotZ;
-
+void keyboard(unsigned char key, int x, int y) {
+	switch (key) {
+	case 033:
+	case 'q':
+		exit(1);
+		break;
 	}
+}
+
+void drawInBuffer(Particle* t, int index) {
+	
+	color* colorBuffer = (color*)(vertexColors + index * COLOR_COORDINATES);
+	vertex* translationBuffer = (vertex*)(vertexTranslations + index * TRANSLATION_COORDINATES);
+	GLfloat* rotzBuffer = vertexRotations + index * ROTZ_COORDINATES ;
+
+	*colorBuffer = t->color;
+	*translationBuffer = t->position;
+	*rotzBuffer = t->rotZ;
 
 }
 
@@ -69,27 +65,33 @@ void display(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	// Load in new data to the buffers
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions, GL_DYNAMIC_DRAW); // GL_DYNAMIC for changing data.
-	glBindBuffer(GL_ARRAY_BUFFER, normalBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexNormals), vertexNormals, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexTranslations), vertexTranslations, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, rotZBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexRotZs), vertexRotZs, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexRotations), vertexRotations, GL_DYNAMIC_DRAW);
 	
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
 	// Specify how the shader finds data in the buffers
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject); // Sets active buffer
-	glEnableVertexAttribArray(0); // Enables an attribute slot
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL); // Specifies how to parse vertexarrayobject data into an attribute
 
-	glBindBuffer(GL_ARRAY_BUFFER, normalBufferObject);
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+	//glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject); // Sets active buffer
+	// =>
+	glBindBuffer(GL_ARRAY_BUFFER, instanceBufferObject);
+
+	glEnableVertexAttribArray(0); // Enables an attribute slot
+	
+	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL); // Specifies how to parse vertexarrayobject data into an attribute
+	// =>
+	glVertexAttribPointer(
+		0, // attribute. No particular reason for 0, but must match the layout in the shader.
+		3, // size
+		GL_FLOAT, // type
+		GL_FALSE, // normalized?
+		0, // stride
+		(void*)0 // array buffer offset
+	);
 
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
 	glEnableVertexAttribArray(attribute_color);
@@ -104,7 +106,16 @@ void display(){
 	glVertexAttribPointer(attribute_rotz, 1, GL_FLOAT, GL_FALSE, 0, NULL);
 	
 	// Draw from the specified part of the array
-	glDrawArrays(GL_TRIANGLES, 0, pool.count() * 3); // 3 vertices for each tri
+	glVertexAttribDivisor(0, 0); // particles vertices : always reuse the same 4 vertices -> 0
+	glVertexAttribDivisor(1, 1); // positions : one per quad (its center) -> 1
+	glVertexAttribDivisor(attribute_color, 1); 
+	glVertexAttribDivisor(attribute_translation, 1); 
+	glVertexAttribDivisor(attribute_rotz, 1); 
+
+	glDrawArraysInstanced(GL_TRIANGLES, 0, instanceVertexCount, pool.count());
+
+	
+	//glDrawArrays(GL_TRIANGLES, 0, pool.count() * 3); // 3 vertices for each tri
 
 	// Reset the holy global state machine that is openGL
 	glDisableVertexAttribArray(0);
@@ -126,15 +137,18 @@ void onFrame(int value) {
 	if (count % EMIT_FRAME_DELAY == 0) {
 		for (int i = 0; i < EMIT_AMOUNT; i++) {
 
-			Triparticle* t = pool.new_object();
+			if (pool.count() >= MAX_PARTICLES)
+				break;
 
-			init_random_triparticle(t, MIN_TRI_SIZE, MAX_TRI_SIZE, MIN_START, MAX_START);
+			Particle* t = pool.new_object();
+
+			init_random_triparticle(t);
 
 		}
 	}
 
 	for (int i = 0; i < pool.count(); ++i) {
-		Triparticle* t = pool.at(i);
+		Particle* t = pool.at(i);
 
 		update_triparticle(t);
 
@@ -161,35 +175,39 @@ void init(){
 	glClearColor(0, 0, 0, 1);
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(40.0, 1.0, 1.0, 10.0);
+	gluPerspective(40.0, 1.0, 1.0, 100.0);
 	glMatrixMode(GL_MODELVIEW);
-	gluLookAt(0.0, 0.0, 5.0,  // Set eye position, target position, and up direction.
+	gluLookAt(0.0, 0.0, 15.0,  // Set eye position, target position, and up direction.
 		0.0, 0.0, 0.0,
 		0.0, 1.0, 0.);
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_FRONT /* or GL_BACK or even GL_FRONT_AND_BACK */);
+	glFrontFace(GL_CW /* or GL_CCW */);
+
+
 
 	// Prepare the shader program.
 	GLuint shaderProgram = LoadShaderProgram();
 	glUseProgram(shaderProgram);
 
 	// generate "pointers" (names) for each buffer
-	glGenBuffers(1, &vertexBufferObject);
-	glGenBuffers(1, &normalBufferObject);
 	glGenBuffers(1, &colorBufferObject);
 	glGenBuffers(1, &translationBufferObject);
 	glGenBuffers(1, &rotZBufferObject);
+	// NEW INSTANCE BUFFER
+	glGenBuffers(1, &instanceBufferObject);
 	
 	// put data in buffers - glBindBuffer sets the active buffer, glBufferData pours data in the active buffer
-	glBindBuffer(GL_ARRAY_BUFFER, vertexBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexPositions), vertexPositions, GL_DYNAMIC_DRAW); // GL_DYNAMIC for changing data.
-	glBindBuffer(GL_ARRAY_BUFFER, normalBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexNormals), vertexNormals, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, colorBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexColors), vertexColors, GL_DYNAMIC_DRAW); 
 	glBindBuffer(GL_ARRAY_BUFFER, translationBufferObject);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexTranslations), vertexTranslations, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, rotZBufferObject);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexRotZs), vertexRotZs, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertexRotations), vertexRotations, GL_DYNAMIC_DRAW);
+	// NEW INSTANCE BUFFER
+	glBindBuffer(GL_ARRAY_BUFFER, instanceBufferObject);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * instanceVertexCount * 3, instanceData, GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
@@ -211,6 +229,36 @@ void init(){
 }
 
 int main(int argc, char **argv) {
+
+	vector<vertex> vertices;
+	vector<triangle> triangles;
+
+	read_obj_file("cube.obj", &vertices, &triangles);
+
+	int T = triangles.size();
+
+	instanceVertexCount = T * 3;
+	instanceData = (GLfloat*)malloc((sizeof(GLfloat)) * 3 * instanceVertexCount);
+
+	vertex* verts = (vertex*)instanceData;
+
+	for (int i = 0; i < T; ++i)
+	{
+		triangle t = triangles[i];
+		vertex v1 = vertices[t.i1];
+		vertex v2 = vertices[t.i2];
+		vertex v3 = vertices[t.i3];
+		verts[i * 3 + 0] = v1;
+		verts[i * 3 + 1] = v2;
+		verts[i * 3 + 2] = v3;
+	}
+
+	for (int i = 0; i < (T * 3 * 3); ++i)
+	{
+		instanceData[i] *= 0.5;
+	}
+
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
 	glutInitWindowPosition(512, 128);//optional

@@ -2,45 +2,61 @@
 #define TRI_PARTICLE
 
 #include "vertex.h"
+#include "color.h"
 
-#define MIN_TRI_SIZE (0.3)
-#define MAX_TRI_SIZE (0.8)
 #define LIFE_TIME (300)
 
-const vertex MIN_START{
-	-3.0,
-	2.0,
-	0.0
-};
+static const vertex MIN_START{ -3.0, 2.0, 0.0 };
+static const vertex MAX_START { 2.0, 2.0, 0.0 };
 
-const vertex MAX_START{
-	2.0,
-	2.0,
-	0.0
-};
+struct Particle {
 
-
-// Performance posibility: Have vertices in world space instead of local,
-// and disregard position entirely when drawing, saving calculations.
-struct Triparticle {
-	vertex pos;
-	vertex v1, v2, v3;
-	// Maybe have rotation and angular velocity?  
+	vertex position;
 	vertex velocity;
 
 	GLfloat rotZ;
 	GLfloat velZ;
 
 	color color;
+
 	int lifetime;
 };
 
 void init_random_triparticle(
-	Triparticle *t, GLfloat minSize,
-	GLfloat maxSize,
-	vertex minPos,
-	vertex maxPos);
+	Particle *t,
+	vertex minPos = MIN_START,
+	vertex maxPos = MAX_START) {
 
-void update_triparticle(Triparticle* t);
+	// Random position between min and max
+	t->position = vertex_random(
+		minPos.x, maxPos.x,
+		minPos.y, maxPos.y,
+		minPos.z, maxPos.z);
+
+	// Speed is not random yet, just some downwards direction for now 
+
+	t->velocity = {
+		0.0,
+		randFloatRange(-0.03, -0.001),
+		0.0
+	};
+
+	t->rotZ = 0.0f;
+	t->velZ = randFloatRange(-0.02, 0.02);
+
+	t->lifetime = LIFE_TIME;
+
+	t->color = color_random(0.2);
+
+}
+
+void update_triparticle(Particle* t) {
+	
+	t->lifetime--;
+
+	t->position = vertex_add(t->position, t->velocity);
+
+	t->rotZ += t->velZ;
+}
 
 #endif

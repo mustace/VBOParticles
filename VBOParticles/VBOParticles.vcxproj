@@ -66,12 +66,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="keyboard.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="quad.cpp" />
     <ClCompile Include="shaders.cpp" />
-    <ClCompile Include="triparticle.cpp" />
-    <ClCompile Include="vertex.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="fragment.glsl" />
@@ -79,11 +75,18 @@
     <None Include="vertex.glsl" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="keyboard.h" />
+    <ClInclude Include="color.h" />
+    <ClInclude Include="obj.h" />
     <ClInclude Include="pool.h" />
+    <ClInclude Include="random.h" />
     <ClInclude Include="shaders.h" />
     <ClInclude Include="triparticle.h" />
     <ClInclude Include="vertex.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="cube.obj">
+      <FileType>Document</FileType>
+    </None>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

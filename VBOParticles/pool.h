@@ -24,16 +24,16 @@ public:
 
 	T* new_object() {
 
-		int s = objects.size();
+		T* obj;
 
-		if (liveCount < s)
+		if (liveCount < objects.size())
 		{
-			return objects[liveCount++];
+			obj = objects[liveCount];
 		}
-
-		T* obj = new T();
-
-		objects.push_back(obj);
+		else {
+			obj = new T();
+			objects.push_back(obj);
+		}
 
 		liveCount++;
 
