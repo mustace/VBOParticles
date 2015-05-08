@@ -35,6 +35,7 @@
 #define LINE_SIZE (256)
 #define FRAME_MSEC (17)
 #define EMIT_FRAME_DELAY (1)
+#define REFLECTION_RATE (1.0)
 
 #define POSITION_COORDINATES (3)
 #define NORMAL_COORDINATES (3)
@@ -57,6 +58,7 @@ attributeIdColor,
 attributeIdTranslation,
 attributeIdRotation,
 uniformIdScale;
+	uniformIdReflecRate;
 
 GLfloat particleColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
 GLfloat particleTranslations[MAX_PARTICLES * TRANSLATION_COORDINATES]; // XYZ format
@@ -140,6 +142,7 @@ void display(){
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glUniform3fv(uniform_campos, 1, cameraPosition);
+	glUniform1f(uniformIdReflecRate, REFLECTION_RATE);
 
 	// Load in new data to the buffers
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdColor);
@@ -346,6 +349,15 @@ void init(){
 	else
 	{
 		printf("%s bound to %d\n", uniform_name_campos, uniform_campos);
+	}
+
+	uniformIdReflecRate = glGetUniformLocation(shaderProgram, uniformNameReflecRate);
+	if (uniformIdReflecRate == -1) {
+		fprintf(stderr, "Could not bind uniform %s\n", uniformNameReflecRate);
+	}
+	else
+	{
+		printf("%s bound to %d\n", uniformNameReflecRate, uniformIdReflecRate);
 	}
 
 	attributeIdNormal = glGetAttribLocation(shaderProgram, attributeNameNormal);

@@ -1,4 +1,5 @@
 uniform samplerCube cubemap;
+uniform float reflecRate;
 
 varying vec4 vColor;
 varying vec3 vNormal;
@@ -18,5 +19,5 @@ void main()
 	
 
 	// gl_FragColor = vec4(reflected, 1.0);
-	gl_FragColor = texture(cubemap, reflected);
+	gl_FragColor = mix(vec4(reflected, 1.0), texture(cubemap, reflected), reflecRate);
 }
