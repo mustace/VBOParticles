@@ -9,7 +9,6 @@
 #include <glm/mat4x4.hpp>
 #include "SOIL.h"
 
-
 #define MAX_PARTICLES (1000)
 #define LINE_SIZE (256)
 #define FRAME_MSEC (17)

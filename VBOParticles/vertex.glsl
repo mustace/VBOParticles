@@ -74,9 +74,9 @@ void main()
 	// Rotation -> Translation -> Model -> View matrix, all at once
 	mat4 mvtr = gl_ModelViewMatrix * t * r;
 
-	vNormal = normalize(t * r * n);
+	vNormal = vec3(normalize(t * r * n));
 
-	vDir = (t * r * inVertex) - camPos;
+	vDir = vec3((t * r * inVertex)) - camPos;
 
 	gl_Position = gl_ProjectionMatrix * mvtr * inVertex;
 	
