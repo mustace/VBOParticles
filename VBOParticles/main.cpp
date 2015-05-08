@@ -10,11 +10,11 @@
 #include "SOIL.h"
 
 // SETUP_NOREFS
-#define MAX_PARTICLES (100)
-#define EMIT_AMOUNT (1)
-#define CUBE_SCALE (1.0)
-#define REFLECTION_RATE (0.0)
-#define EMIT_FRAME_DELAY (60)
+//#define MAX_PARTICLES (100)
+//#define EMIT_AMOUNT (1)
+//#define CUBE_SCALE (1.0)
+//#define REFLECTION_RATE (0.0)
+//#define EMIT_FRAME_DELAY (60)
 
 // SETUP_REFS
 //#define MAX_PARTICLES (100)
@@ -38,11 +38,11 @@
 //#define EMIT_FRAME_DELAY (1)
 
 // SETUP_30K
-//#define MAX_PARTICLES (30000)
-//#define EMIT_AMOUNT (60)
-//#define CUBE_SCALE (0.05)
-//#define REFLECTION_RATE (1.0)
-//#define EMIT_FRAME_DELAY (1)
+#define MAX_PARTICLES (30000)
+#define EMIT_AMOUNT (60)
+#define CUBE_SCALE (0.05)
+#define REFLECTION_RATE (1.0)
+#define EMIT_FRAME_DELAY (1)
 
 #define LINE_SIZE (256)
 #define FRAME_MSEC (17)
@@ -473,8 +473,8 @@ int main(int argc, char **argv) {
 
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_DOUBLE | GLUT_RGBA);
-	glutInitWindowPosition(512, 128);//optional
-	glutInitWindowSize(800, 600); //optional
+	glutInitWindowPosition(300, 32);//optional
+	glutInitWindowSize(1024, 768); //optional
 	glutCreateWindow("Particle Window!");
 	glewInit();
 
