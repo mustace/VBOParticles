@@ -9,33 +9,45 @@
 #include <glm/mat4x4.hpp>
 #include "SOIL.h"
 
+// SETUP_NOREFS
+#define MAX_PARTICLES (100)
+#define EMIT_AMOUNT (1)
+#define CUBE_SCALE (1.0)
+#define REFLECTION_RATE (0.0)
+#define EMIT_FRAME_DELAY (60)
+
+// SETUP_REFS
+//#define MAX_PARTICLES (100)
+//#define EMIT_AMOUNT (1)
+//#define CUBE_SCALE (1.0)
+//#define REFLECTION_RATE (1.0)
+//#define EMIT_FRAME_DELAY (60)
+
 // SETUP_5K
 //#define MAX_PARTICLES (5000)
 //#define EMIT_AMOUNT (10)
 //#define CUBE_SCALE (0.5)
-
-
-// SETUP_5K_NOREF
-//#define MAX_PARTICLES (5000)
-//#define EMIT_AMOUNT (10)
-//#define CUBE_SCALE (0.05)
-
+//#define REFLECTION_RATE (1.0)
+//#define EMIT_FRAME_DELAY (1)
 
 // SETUP_10K
 //#define MAX_PARTICLES (10000)
 //#define EMIT_AMOUNT (20)
 //#define CUBE_SCALE (0.05)
-
+//#define REFLECTION_RATE (1.0)
+//#define EMIT_FRAME_DELAY (1)
 
 // SETUP_30K
-#define MAX_PARTICLES (30000)
-#define EMIT_AMOUNT (60)
-#define CUBE_SCALE (0.05)
+//#define MAX_PARTICLES (30000)
+//#define EMIT_AMOUNT (60)
+//#define CUBE_SCALE (0.05)
+//#define REFLECTION_RATE (1.0)
+//#define EMIT_FRAME_DELAY (1)
 
 #define LINE_SIZE (256)
 #define FRAME_MSEC (17)
-#define EMIT_FRAME_DELAY (1)
-#define REFLECTION_RATE (1.0)
+
+
 
 #define POSITION_COORDINATES (3)
 #define NORMAL_COORDINATES (3)
@@ -57,8 +69,8 @@ attributeIdNormal,
 attributeIdColor,
 attributeIdTranslation,
 attributeIdRotation,
-uniformIdScale;
-	uniformIdReflecRate;
+uniformIdScale,
+uniformIdReflecRate;
 
 GLfloat particleColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
 GLfloat particleTranslations[MAX_PARTICLES * TRANSLATION_COORDINATES]; // XYZ format
