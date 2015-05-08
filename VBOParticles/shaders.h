@@ -12,5 +12,6 @@ char* attributeNameColor = "inColor";
 char* attributeNameTranslation = "inTranslation";
 char* attributeNameRotation = "inRotation";
 char* uniformNameScale = "inScale";
+char* uniformNameReflecRate = "reflecRate";
 
 #endif
