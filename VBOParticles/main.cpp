@@ -9,11 +9,32 @@
 #include <glm/mat4x4.hpp>
 #include "SOIL.h"
 
-#define MAX_PARTICLES (1000)
+// SETUP_5K
+//#define MAX_PARTICLES (5000)
+//#define EMIT_AMOUNT (10)
+//#define CUBE_SCALE (0.5)
+
+
+// SETUP_5K_NOREF
+//#define MAX_PARTICLES (5000)
+//#define EMIT_AMOUNT (10)
+//#define CUBE_SCALE (0.05)
+
+
+// SETUP_10K
+//#define MAX_PARTICLES (10000)
+//#define EMIT_AMOUNT (20)
+//#define CUBE_SCALE (0.05)
+
+
+// SETUP_30K
+#define MAX_PARTICLES (30000)
+#define EMIT_AMOUNT (60)
+#define CUBE_SCALE (0.05)
+
 #define LINE_SIZE (256)
 #define FRAME_MSEC (17)
-#define EMIT_FRAME_DELAY (20)
-#define EMIT_AMOUNT (2)
+#define EMIT_FRAME_DELAY (1)
 
 #define POSITION_COORDINATES (3)
 #define NORMAL_COORDINATES (3)
@@ -21,21 +42,21 @@
 #define TRANSLATION_COORDINATES (3)
 #define ROTATION_COORDINATES (1)
 
-GLuint 
-	vboIdVertex, 
-	vboIdNormal, 
-	vboIdColor, 
-	vboIdTranslation, 
-	vboIdRotation,
-	vboIdScale;
+GLuint
+vboIdVertex,
+vboIdNormal,
+vboIdColor,
+vboIdTranslation,
+vboIdRotation,
+vboIdScale;
 
 GLint
-	attributeIdVertex,
-	attributeIdNormal,
-	attributeIdColor,
-	attributeIdTranslation,
-	attributeIdRotation,
-	uniformIdScale;
+attributeIdVertex,
+attributeIdNormal,
+attributeIdColor,
+attributeIdTranslation,
+attributeIdRotation,
+uniformIdScale;
 
 GLfloat particleColors[MAX_PARTICLES * COLOR_COORDINATES]; // RGBA format
 GLfloat particleTranslations[MAX_PARTICLES * TRANSLATION_COORDINATES]; // XYZ format
@@ -70,7 +91,7 @@ char* textureStrings[6] = {
 
 Pool<Particle> pool;
 
-GLfloat cameraPosition[3] = { 0.0, 0.0, 10.0 };
+GLfloat cameraPosition[3] = { 0.0, 0.0, 20.0 };
 
 void keyboard(unsigned char key, int x, int y) {
 
@@ -102,7 +123,7 @@ void keyboard(unsigned char key, int x, int y) {
 }
 
 void drawInBuffer(Particle* t, int index) {
-	
+
 	color* colorBuffer = (color*)(particleColors + index * COLOR_COORDINATES);
 	vertex* translationBuffer = (vertex*)(particleTranslations + index * TRANSLATION_COORDINATES);
 	GLfloat* rotationBuffer = particleRotations + index * ROTATION_COORDINATES;
@@ -137,7 +158,7 @@ void display(){
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdVertex);
 
 	glEnableVertexAttribArray(attributeIdVertex); // Enables an attribute slot
-	
+
 	//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL); // Specifies how to parse vertexarrayobject data into an attribute
 	// =>
 	glVertexAttribPointer(
@@ -147,7 +168,7 @@ void display(){
 		GL_FALSE, // normalized?
 		0, // stride
 		NULL // array buffer offset
-	);
+		);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdNormal);
 	glEnableVertexAttribArray(attributeIdNormal);
@@ -158,7 +179,7 @@ void display(){
 		GL_FALSE, // normalized?
 		0, // stride
 		NULL // array buffer offset
-	);
+		);
 
 
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdColor);
@@ -173,15 +194,15 @@ void display(){
 	glEnableVertexAttribArray(attributeIdRotation);
 	glVertexAttribPointer(attributeIdRotation, 1, GL_FLOAT, GL_FALSE, 0, NULL);
 
-	glVertexAttribDivisor(attributeIdVertex, 0); 
-	glVertexAttribDivisor(attributeIdNormal, 0); 
-	glVertexAttribDivisor(attributeIdColor, 1); 
-	glVertexAttribDivisor(attributeIdTranslation, 1); 
-	glVertexAttribDivisor(attributeIdRotation, 1); 
+	glVertexAttribDivisor(attributeIdVertex, 0);
+	glVertexAttribDivisor(attributeIdNormal, 0);
+	glVertexAttribDivisor(attributeIdColor, 1);
+	glVertexAttribDivisor(attributeIdTranslation, 1);
+	glVertexAttribDivisor(attributeIdRotation, 1);
 
 	glDrawArraysInstanced(GL_TRIANGLES, 0, instanceVertexCount, pool.count());
 
-	
+
 	//glDrawArrays(GL_TRIANGLES, 0, pool.count() * 3); // 3 vertices for each tri
 
 	// Reset the holy global state machine that is openGL
@@ -285,13 +306,13 @@ void init(){
 
 	// generate "pointers" (names) for each buffer
 	glGenBuffers(1, &vboIdVertex);
-	glGenBuffers(1, &vboIdNormal); 
+	glGenBuffers(1, &vboIdNormal);
 	glGenBuffers(1, &vboIdColor);
 	glGenBuffers(1, &vboIdTranslation);
 	glGenBuffers(1, &vboIdRotation);
 	glGenBuffers(1, &vboIdScale);
-	
-	
+
+
 	// put data in buffers - glBindBuffer sets the active buffer, glBufferData pours data in the active buffer
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdVertex);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * instanceVertexCount * 3, instanceVertices, GL_STATIC_DRAW);
@@ -299,14 +320,14 @@ void init(){
 	glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * instanceVertexCount * 3, instanceNormals, GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdColor);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(particleColors), particleColors, GL_DYNAMIC_DRAW); 
+	glBufferData(GL_ARRAY_BUFFER, sizeof(particleColors), particleColors, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdTranslation);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(particleTranslations), particleTranslations, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdRotation);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(particleRotations), particleRotations, GL_DYNAMIC_DRAW);
 	glBindBuffer(GL_ARRAY_BUFFER, vboIdScale);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(particleScales), particleScales, GL_DYNAMIC_DRAW);
-	
+
 	glBindBuffer(GL_ARRAY_BUFFER, 0); // or null, whatever we feel like
 
 	attributeIdVertex = glGetAttribLocation(shaderProgram, attributeNameVertex);
@@ -318,7 +339,7 @@ void init(){
 		printf("%s bound to %d\n", attributeNameVertex, attributeIdVertex);
 	}
 
-	uniform_campos= glGetUniformLocation(shaderProgram, uniform_name_campos);
+	uniform_campos = glGetUniformLocation(shaderProgram, uniform_name_campos);
 	if (uniform_campos == -1) {
 		fprintf(stderr, "Could not bind uniform %s\n", uniform_name_campos);
 	}
@@ -408,7 +429,7 @@ int main(int argc, char **argv) {
 
 	for (int i = 0; i < T * 9; ++i) {
 
-		instanceVertices[i] *= 0.5f;
+		instanceVertices[i] *= CUBE_SCALE;
 
 	}
 
@@ -440,7 +461,7 @@ int main(int argc, char **argv) {
 	glutTimerFunc(FRAME_MSEC, onFrame, 0);
 	//glutDisplayFunc(display);
 
-	printf("OpenGL version supported by this platform (%s): \n", (char const*) glGetString(GL_VERSION));
+	printf("OpenGL version supported by this platform (%s): \n", (char const*)glGetString(GL_VERSION));
 
 	glutMainLoop();
 
